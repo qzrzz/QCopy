@@ -1,0 +1,19 @@
+{
+  "name": "QCopy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "macOS 原生快速文件复制工具",
+  "scripts": {
+    "dev": "bun dev.ts",
+    "debug": "bun debug.ts",
+    "build": "bun release.ts --no-publish",
+    "release": "bun release.ts",
+    "clean": "bun scripts/clean.ts",
+    "version": "bun scripts/version-bump.ts",
+    "version+": "bun scripts/version-bump.ts"
+  },
+  "packageManager": "bun",
+  "dependencies": {
+    "@types/node": "26.2.0"
+  }
+}
