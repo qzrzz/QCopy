@@ -1,0 +1,455 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0A4C75E19AEEFB1A619E58EE /* TransferWorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACB6AEC4B627492720531F51 /* TransferWorkspaceView.swift */; };
+		1D37355EEAC470CFC7A59AB2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A8C67AAE44AC2CB7ADDB3439 /* Assets.xcassets */; };
+		32B5338CF330D4D49B27C19F /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1E6BBC625C1B0265B99B45 /* Theme.swift */; };
+		467BECA0BD3B6CE365A56065 /* CopyEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C026766B87A619C7085D5C6 /* CopyEngine.swift */; };
+		5FA11739E916D3DDC9BB4264 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E768823F71687002F54B89 /* ContentView.swift */; };
+		8559727B8EE9E2B4E38D7099 /* QCopyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2941EBAAC0D43BF7434BF959 /* QCopyApp.swift */; };
+		97F83520F535D5F27C71A2B8 /* CopyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7D3F98331F5D392DEDDB53D /* CopyModels.swift */; };
+		C5B0C3E44BC4037D1D691BD3 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = 6808612EA83986AF5071A6D9 /* Fonts */; };
+		D4C1AC014A6A6590F82119A0 /* CopyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88F945821D02EBF33DAE27BC /* CopyViewModel.swift */; };
+		F0D48579E0C050A0E178BCA5 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA785B0E0A674F61BD5CDA1A /* HistoryView.swift */; };
+		F7CCFEBE3DC8BF059574DE6D /* CopyEngineSafetyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D94D0296922546FF4BCDF0 /* CopyEngineSafetyTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		DE909CA61EA8C55DDDFFDF58 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8718CAFA3F43488A0DA27E20 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 95E7D1DB4C8291F13FF1A8A6;
+			remoteInfo = QCopy;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0CB2631728E2F0AC36686423 /* QCopy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QCopy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2941EBAAC0D43BF7434BF959 /* QCopyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QCopyApp.swift; sourceTree = "<group>"; };
+		40D94D0296922546FF4BCDF0 /* CopyEngineSafetyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyEngineSafetyTests.swift; sourceTree = "<group>"; };
+		5C026766B87A619C7085D5C6 /* CopyEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyEngine.swift; sourceTree = "<group>"; };
+		6564E623E056AAD30AAE67AE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		6808612EA83986AF5071A6D9 /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Fonts; path = QCopy/Fonts; sourceTree = SOURCE_ROOT; };
+		88F945821D02EBF33DAE27BC /* CopyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyViewModel.swift; sourceTree = "<group>"; };
+		A8C67AAE44AC2CB7ADDB3439 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		ACB6AEC4B627492720531F51 /* TransferWorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferWorkspaceView.swift; sourceTree = "<group>"; };
+		BB1E6BBC625C1B0265B99B45 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		C4E768823F71687002F54B89 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		DA785B0E0A674F61BD5CDA1A /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		E7D3F98331F5D392DEDDB53D /* CopyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyModels.swift; sourceTree = "<group>"; };
+		EF7DD8D1E6184A08650DAD0A /* QCopyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QCopyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		0D7E63FCB27A71D02026BEA2 /* QCopyTests */ = {
+			isa = PBXGroup;
+			children = (
+				40D94D0296922546FF4BCDF0 /* CopyEngineSafetyTests.swift */,
+			);
+			path = QCopyTests;
+			sourceTree = "<group>";
+		};
+		0DCB98A74C6EF6042B4F79F0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0CB2631728E2F0AC36686423 /* QCopy.app */,
+				EF7DD8D1E6184A08650DAD0A /* QCopyTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		1F9A950CC501BA7F63C34A74 = {
+			isa = PBXGroup;
+			children = (
+				EF48D96C5AED2162E5978055 /* QCopy */,
+				0D7E63FCB27A71D02026BEA2 /* QCopyTests */,
+				0DCB98A74C6EF6042B4F79F0 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		EF48D96C5AED2162E5978055 /* QCopy */ = {
+			isa = PBXGroup;
+			children = (
+				A8C67AAE44AC2CB7ADDB3439 /* Assets.xcassets */,
+				C4E768823F71687002F54B89 /* ContentView.swift */,
+				5C026766B87A619C7085D5C6 /* CopyEngine.swift */,
+				E7D3F98331F5D392DEDDB53D /* CopyModels.swift */,
+				88F945821D02EBF33DAE27BC /* CopyViewModel.swift */,
+				6808612EA83986AF5071A6D9 /* Fonts */,
+				DA785B0E0A674F61BD5CDA1A /* HistoryView.swift */,
+				6564E623E056AAD30AAE67AE /* Info.plist */,
+				2941EBAAC0D43BF7434BF959 /* QCopyApp.swift */,
+				BB1E6BBC625C1B0265B99B45 /* Theme.swift */,
+				ACB6AEC4B627492720531F51 /* TransferWorkspaceView.swift */,
+			);
+			path = QCopy;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		4500D4AB318F8B2AB44B780E /* QCopyTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0FCE3E3F38438F58D9244A64 /* Build configuration list for PBXNativeTarget "QCopyTests" */;
+			buildPhases = (
+				9C27E098D25E492368C5E907 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3CAF5D8796411AD5A6565AB4 /* PBXTargetDependency */,
+			);
+			name = QCopyTests;
+			packageProductDependencies = (
+			);
+			productName = QCopyTests;
+			productReference = EF7DD8D1E6184A08650DAD0A /* QCopyTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		95E7D1DB4C8291F13FF1A8A6 /* QCopy */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9D8BD1B92C6865748615B10A /* Build configuration list for PBXNativeTarget "QCopy" */;
+			buildPhases = (
+				23BBA88BC72BD9298AB04702 /* Sources */,
+				9ECBAA91A905D00579A437F0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = QCopy;
+			packageProductDependencies = (
+			);
+			productName = QCopy;
+			productReference = 0CB2631728E2F0AC36686423 /* QCopy.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		8718CAFA3F43488A0DA27E20 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					4500D4AB318F8B2AB44B780E = {
+						ProvisioningStyle = Manual;
+					};
+					95E7D1DB4C8291F13FF1A8A6 = {
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = 06B62295649013F9AD339008 /* Build configuration list for PBXProject "QCopy" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 1F9A950CC501BA7F63C34A74;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 0DCB98A74C6EF6042B4F79F0 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				95E7D1DB4C8291F13FF1A8A6 /* QCopy */,
+				4500D4AB318F8B2AB44B780E /* QCopyTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9ECBAA91A905D00579A437F0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1D37355EEAC470CFC7A59AB2 /* Assets.xcassets in Resources */,
+				C5B0C3E44BC4037D1D691BD3 /* Fonts in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		23BBA88BC72BD9298AB04702 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5FA11739E916D3DDC9BB4264 /* ContentView.swift in Sources */,
+				467BECA0BD3B6CE365A56065 /* CopyEngine.swift in Sources */,
+				97F83520F535D5F27C71A2B8 /* CopyModels.swift in Sources */,
+				D4C1AC014A6A6590F82119A0 /* CopyViewModel.swift in Sources */,
+				F0D48579E0C050A0E178BCA5 /* HistoryView.swift in Sources */,
+				8559727B8EE9E2B4E38D7099 /* QCopyApp.swift in Sources */,
+				32B5338CF330D4D49B27C19F /* Theme.swift in Sources */,
+				0A4C75E19AEEFB1A619E58EE /* TransferWorkspaceView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9C27E098D25E492368C5E907 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F7CCFEBE3DC8BF059574DE6D /* CopyEngineSafetyTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3CAF5D8796411AD5A6565AB4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 95E7D1DB4C8291F13FF1A8A6 /* QCopy */;
+			targetProxy = DE909CA61EA8C55DDDFFDF58 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		255FAA9502BB4FCFCF36A55C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		2CA18AFDDD2A08075801B491 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = QCopy/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.qzrzz.qcopy;
+				PRODUCT_MODULE_NAME = QCopy;
+				PRODUCT_NAME = QCopy;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		2FF4EBACF6CA68165D882506 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.qzrzz.qcopy.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/QCopy.app/Contents/MacOS/QCopy";
+			};
+			name = Release;
+		};
+		A454D1CD06C9409A98A40A7B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = QCopy/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.qzrzz.qcopy.dev;
+				PRODUCT_MODULE_NAME = QCopy;
+				PRODUCT_NAME = "QCopy Dev";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		B89439733A2B48A40AFD362E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEPLOYMENT_POSTPROCESSING = YES;
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				STRIP_INSTALLED_PRODUCT = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		E6BA34C8E01A7D7EB88359C2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.qzrzz.qcopy.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/QCopy Dev.app/Contents/MacOS/QCopy Dev";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		06B62295649013F9AD339008 /* Build configuration list for PBXProject "QCopy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				255FAA9502BB4FCFCF36A55C /* Debug */,
+				B89439733A2B48A40AFD362E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		0FCE3E3F38438F58D9244A64 /* Build configuration list for PBXNativeTarget "QCopyTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6BA34C8E01A7D7EB88359C2 /* Debug */,
+				2FF4EBACF6CA68165D882506 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9D8BD1B92C6865748615B10A /* Build configuration list for PBXNativeTarget "QCopy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A454D1CD06C9409A98A40A7B /* Debug */,
+				2CA18AFDDD2A08075801B491 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 8718CAFA3F43488A0DA27E20 /* Project object */;
+}
