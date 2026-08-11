@@ -97,7 +97,7 @@ private struct HistoryRow: View {
                             .foregroundStyle(QCopyTheme.Colors.secondary)
                             .lineLimit(1)
                         Spacer(minLength: 8)
-                        Text(item.state.title(language.language))
+                        Text(item.state.title(language.language, mode: item.mode))
                             .font(QCopyTheme.Typography.caption.weight(.semibold))
                             .foregroundStyle(statusColor)
                     }

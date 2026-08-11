@@ -87,6 +87,8 @@ struct TransferModePicker: View {
         .padding(.horizontal, 4)
         .controlSize(.large)
         .fixedSize(horizontal: true, vertical: false)
+        .disabled(model.isTransferring)
+        .opacity(model.isTransferring ? 0.55 : 1)
         .accessibilityLabel(language.t(.transferModeA11y))
     }
 }
@@ -225,6 +227,9 @@ private struct SmartParallelToggle: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(language.t(.smartParallel))
                     .font(QCopyTheme.Typography.body.weight(.medium))
+                Text(language.t(.smartParallelHint))
+                    .font(QCopyTheme.Typography.caption)
+                    .foregroundStyle(QCopyTheme.Colors.secondary)
             }
         }
         .toggleStyle(.switch)
@@ -647,9 +652,9 @@ struct ActiveTransferCard: View {
                         Image(systemName: symbol(for: job.state))
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(color(for: job.state))
-                        Text(job.state.title(language.language))
+                        Text(job.state.title(language.language, mode: job.mode))
                             .font(QCopyTheme.Typography.title)
-                        // 耗时放在「正在传输」右侧
+                        // 耗时放在当前状态右侧
                         Text(DurationFormatter.string(elapsed, language: language.language))
                             .font(.system(size: 13, weight: .medium, design: .rounded))
                             .foregroundStyle(QCopyTheme.Colors.secondary)
@@ -669,7 +674,7 @@ struct ActiveTransferCard: View {
                         }
                     }
 
-                    Text(language.phase(job.currentFile))
+                    Text(language.phase(job.currentFile, mode: job.mode))
                         .font(QCopyTheme.Typography.body)
                         .foregroundStyle(QCopyTheme.Colors.secondary)
                         .lineLimit(1)

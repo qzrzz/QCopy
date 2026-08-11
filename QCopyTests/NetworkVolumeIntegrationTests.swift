@@ -41,6 +41,19 @@ final class NetworkVolumeIntegrationTests: XCTestCase {
         try Data("existing".utf8).write(to: remoteFixture.appendingPathComponent("rename.bin"))
         _ = try await run(source: renameSource, destination: remoteFixture, policy: .rename)
 
+        let moveSource = localFixture.appendingPathComponent("cross-volume-move", isDirectory: true)
+        try fileManager.createDirectory(at: moveSource, withIntermediateDirectories: true)
+        for index in 0..<16 {
+            try Data("move-data-\(index)".utf8)
+                .write(to: moveSource.appendingPathComponent("file-\(index).txt"))
+        }
+        _ = try await run(
+            source: moveSource,
+            destination: remoteFixture,
+            mode: .move,
+            policy: .replace
+        )
+
         XCTAssertEqual(
             try Data(contentsOf: remoteFixture.appendingPathComponent("directory-payload/inside.bin")),
             Data("directory-data".utf8)
@@ -57,17 +70,25 @@ final class NetworkVolumeIntegrationTests: XCTestCase {
             try Data(contentsOf: remoteFixture.appendingPathComponent("rename copy.bin")),
             Data("rename-data".utf8)
         )
+        XCTAssertFalse(fileManager.fileExists(atPath: moveSource.path))
+        for index in 0..<16 {
+            XCTAssertEqual(
+                try Data(contentsOf: remoteFixture.appendingPathComponent("cross-volume-move/file-\(index).txt")),
+                Data("move-data-\(index)".utf8)
+            )
+        }
     }
 
     private func run(
         source: URL,
         destination: URL,
+        mode: TransferMode = .copy,
         policy: ConflictPolicy
     ) async throws -> CopyResult {
         try await CopyEngine.run(
             source: source,
             destination: destination,
-            mode: .copy,
+            mode: mode,
             conflictPolicy: policy,
             progress: { _ in }
         )

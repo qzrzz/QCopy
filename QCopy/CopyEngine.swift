@@ -16,6 +16,22 @@ enum CopyEngine {
 
         try validate(source: source, destination: destination, mode: mode)
 
+        // 只比较来源和目标根目录所在的卷，不读取目录内容。
+        // 同卷移动继续走原子 rename；跨卷移动才需要复制 + 校验 + 删除源文件。
+        let isCrossVolumeMove: Bool = {
+            guard mode == .move else { return false }
+            do {
+                let sourceDevice = try deviceID(of: source)
+                let destinationDevice = try deviceID(
+                    of: destination.resolvingSymlinksInPath().standardizedFileURL
+                )
+                return sourceDevice != destinationDevice
+            } catch {
+                // 无法可靠判断卷时保持串行，优先保证移动安全。
+                return false
+            }
+        }()
+
         let sourceValues = try source.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
         let isDirectory = sourceValues.isDirectory == true && sourceValues.isSymbolicLink != true
 
@@ -64,6 +80,7 @@ enum CopyEngine {
                     fileManager: fileManager,
                     conflictPolicy: conflictPolicy,
                     smartParallel: smartParallel,
+                    parallelMove: isCrossVolumeMove,
                     state: &state,
                     progress: progress
                 )
@@ -189,6 +206,7 @@ enum CopyEngine {
         fileManager: FileManager,
         conflictPolicy: ConflictPolicy,
         smartParallel: Bool,
+        parallelMove: Bool,
         state: inout EngineState,
         progress: @escaping @Sendable (CopyProgress) -> Void
     ) async throws {
@@ -210,9 +228,13 @@ enum CopyEngine {
         var createdDirectories: [DirectoryMetadataPair] = targetWasCreated
             ? [DirectoryMetadataPair(source: source, target: target)]
             : []
+        // 移动目录时绝不在 DirectoryEnumerator 仍在运行期间删除来源项。
+        // 否则并发任务会改变目录内容，DirectoryEnumerator 可能静默跳过后续项。
+        var pendingSourceDeletions: [SourceDeletionRecord] = []
         var pendingParallelWork: [LeafTransferWork] = []
         var parallelTuner = AdaptiveParallelTuner()
-        let parallelEnabled = smartParallel && mode == .copy
+        let parallelEnabled = smartParallel
+            && (mode == .copy || (mode == .move && parallelMove))
 
         while let item = enumerator.nextObject() as? URL {
             try Task.checkCancellation()
@@ -292,6 +314,7 @@ enum CopyEngine {
                         &pendingParallelWork,
                         state: &state,
                         tuner: &parallelTuner,
+                        sourceDeletions: &pendingSourceDeletions,
                         progress: progress
                     )
                 }
@@ -300,6 +323,7 @@ enum CopyEngine {
                     &pendingParallelWork,
                     state: &state,
                     tuner: &parallelTuner,
+                    sourceDeletions: &pendingSourceDeletions,
                     progress: progress
                 )
                 state.currentConcurrency = 1
@@ -309,9 +333,13 @@ enum CopyEngine {
                     mode: mode,
                     conflictPolicy: conflictPolicy,
                     state: state,
+                    deferSourceDeletion: mode == .move,
                     progress: progress
                 )
                 apply(outcome, to: &state, progress: progress)
+                if let sourceDeletion = outcome.sourceDeletion {
+                    pendingSourceDeletions.append(sourceDeletion)
+                }
             }
         }
 
@@ -321,6 +349,7 @@ enum CopyEngine {
                 &pendingParallelWork,
                 state: &state,
                 tuner: &parallelTuner,
+                sourceDeletions: &pendingSourceDeletions,
                 progress: progress
             )
             throw enumerationError
@@ -330,6 +359,7 @@ enum CopyEngine {
             &pendingParallelWork,
             state: &state,
             tuner: &parallelTuner,
+            sourceDeletions: &pendingSourceDeletions,
             progress: progress
         )
 
@@ -338,6 +368,12 @@ enum CopyEngine {
         for pair in createdDirectories.reversed() {
             try Task.checkCancellation()
             try copyDirectoryMetadata(from: pair.source, to: pair.target)
+        }
+
+        // 两阶段移动：所有文件完成复制、校验和目录元数据提交后才删除来源文件。
+        // 这样来源目录在枚举期间保持稳定，失败/取消时也不会删除未提交的来源。
+        if mode == .move {
+            try deleteCommittedSources(pendingSourceDeletions)
         }
 
         if mode == .move {
@@ -349,6 +385,7 @@ enum CopyEngine {
         _ work: inout [LeafTransferWork],
         state: inout EngineState,
         tuner: inout AdaptiveParallelTuner,
+        sourceDeletions: inout [SourceDeletionRecord],
         progress: @escaping @Sendable (CopyProgress) -> Void
     ) async throws {
         while !work.isEmpty {
@@ -356,6 +393,7 @@ enum CopyEngine {
                 &work,
                 state: &state,
                 tuner: &tuner,
+                sourceDeletions: &sourceDeletions,
                 progress: progress
             )
         }
@@ -365,6 +403,7 @@ enum CopyEngine {
         _ work: inout [LeafTransferWork],
         state: inout EngineState,
         tuner: inout AdaptiveParallelTuner,
+        sourceDeletions: inout [SourceDeletionRecord],
         progress: @escaping @Sendable (CopyProgress) -> Void
     ) async throws {
         guard !work.isEmpty else { return }
@@ -394,6 +433,7 @@ enum CopyEngine {
                         mode: item.mode,
                         conflictPolicy: item.conflictPolicy,
                         state: snapshot,
+                        deferSourceDeletion: item.mode == .move,
                         progress: progress
                     )
                 }
@@ -409,6 +449,9 @@ enum CopyEngine {
         let bytes = outcomes.reduce(Int64(0)) { $0 + $1.bytesCopied }
         for outcome in outcomes {
             apply(outcome, to: &state, progress: progress)
+            if let sourceDeletion = outcome.sourceDeletion {
+                sourceDeletions.append(sourceDeletion)
+            }
         }
         tuner.observe(bytes: bytes, duration: elapsed)
     }
@@ -437,6 +480,7 @@ enum CopyEngine {
         mode: TransferMode,
         conflictPolicy: ConflictPolicy,
         state: EngineState,
+        deferSourceDeletion: Bool = false,
         progress: @escaping @Sendable (CopyProgress) -> Void
     ) throws -> LeafTransferOutcome {
         for _ in 0..<32 {
@@ -453,7 +497,8 @@ enum CopyEngine {
                     phase: "已跳过",
                     currentFile: source.lastPathComponent,
                     currentFileBytes: 0,
-                    currentFileTotalBytes: 0
+                    currentFileTotalBytes: 0,
+                    sourceDeletion: nil
                 )
             }
 
@@ -462,7 +507,13 @@ enum CopyEngine {
             // 目标可能在检查后出现；覆盖策略仍应使用普通原子 rename。
             let allowsOverwrite = conflictPolicy == .replace
 
-            if mode == .move {
+            var sourceDeletion: SourceDeletionRecord?
+            if mode == .move && deferSourceDeletion {
+                // 必须在复制开始前记录来源身份。复制期间路径可能被外部进程替换，
+                // 之后只允许删除仍然是同一个 inode 的对象。
+                sourceDeletion = try sourceDeletionRecord(for: source)
+            }
+            if mode == .move && !deferSourceDeletion {
                 let sourceSize = try logicalSize(of: source)
                 switch try renameItem(source: source, target: target, exclusive: !allowsOverwrite) {
                 case .moved:
@@ -474,7 +525,8 @@ enum CopyEngine {
                         phase: "同卷快速移动",
                         currentFile: source.lastPathComponent,
                         currentFileBytes: sourceSize,
-                        currentFileTotalBytes: sourceSize
+                        currentFileTotalBytes: sourceSize,
+                        sourceDeletion: nil
                     )
                 case .destinationExists:
                     continue
@@ -494,21 +546,22 @@ enum CopyEngine {
                 continue
             }
 
-            let outcome = LeafTransferOutcome(
+            if mode == .move {
+                if !deferSourceDeletion {
+                    try Task.checkCancellation()
+                    try unlinkSourceLeaf(source)
+                }
+            }
+            return LeafTransferOutcome(
                 bytesCopied: copyResult.logicalSize,
                 filesCopied: 1,
                 filesSkipped: 0,
                 phase: copyResult.wasCloned ? "APFS 快速克隆" : "传输中",
                 currentFile: source.lastPathComponent,
                 currentFileBytes: copyResult.logicalSize,
-                currentFileTotalBytes: copyResult.logicalSize
+                currentFileTotalBytes: copyResult.logicalSize,
+                sourceDeletion: sourceDeletion
             )
-
-            if mode == .move {
-                try Task.checkCancellation()
-                try unlinkSourceLeaf(source)
-            }
-            return outcome
         }
 
         throw CopyError.destinationChanged(proposedTarget.path)
@@ -807,6 +860,25 @@ enum CopyEngine {
         return result.size
     }
 
+    private static func deviceID(of url: URL) throws -> dev_t {
+        let result = url.withUnsafeFileSystemRepresentation { path -> LStatDeviceResult in
+            guard let path else {
+                return LStatDeviceResult(status: -1, errorCode: EINVAL, device: 0)
+            }
+            var info = stat()
+            let status = Darwin.lstat(path, &info)
+            return LStatDeviceResult(
+                status: status,
+                errorCode: status == 0 ? 0 : errno,
+                device: status == 0 ? info.st_dev : 0
+            )
+        }
+        guard result.status == 0 else {
+            throw CopyError.cannotReadItem(path: url.path, reason: posixMessage(result.errorCode))
+        }
+        return result.device
+    }
+
     static func verifyFileSize(at url: URL, expectedSize: Int64) throws {
         let actualSize = try logicalSize(of: url)
         guard actualSize == expectedSize else {
@@ -889,6 +961,47 @@ enum CopyEngine {
         }
         guard result.result == 0 else {
             throw CopyError.cannotRemoveSource(path: source.path, reason: posixMessage(result.errorCode))
+        }
+    }
+
+    private static func sourceDeletionRecord(for source: URL) throws -> SourceDeletionRecord {
+        let result = source.withUnsafeFileSystemRepresentation { path -> LStatIdentityResult in
+            guard let path else {
+                return LStatIdentityResult(status: -1, errorCode: EINVAL, device: 0, inode: 0, size: 0)
+            }
+            var info = stat()
+            let status = Darwin.lstat(path, &info)
+            return LStatIdentityResult(
+                status: status,
+                errorCode: status == 0 ? 0 : errno,
+                device: status == 0 ? info.st_dev : 0,
+                inode: status == 0 ? info.st_ino : 0,
+                size: status == 0 ? Int64(info.st_size) : 0
+            )
+        }
+        guard result.status == 0 else {
+            throw CopyError.cannotReadItem(path: source.path, reason: posixMessage(result.errorCode))
+        }
+        return SourceDeletionRecord(
+            source: source,
+            device: result.device,
+            inode: result.inode,
+            size: result.size
+        )
+    }
+
+    private static func deleteCommittedSources(_ records: [SourceDeletionRecord]) throws {
+        for record in records {
+            try Task.checkCancellation()
+            // 复制完成后来源可能被外部程序替换；绝不按路径删除新对象。
+            guard itemMatches(record.source, device: record.device, inode: record.inode),
+                  (try? logicalSize(of: record.source)) == record.size else {
+                throw CopyError.cannotRemoveSource(
+                    path: record.source.path,
+                    reason: "来源在复制期间发生变化，已保留"
+                )
+            }
+            try unlinkSourceLeaf(record.source)
         }
     }
 
@@ -1038,6 +1151,14 @@ private struct LeafTransferOutcome: Sendable {
     let currentFile: String
     let currentFileBytes: Int64
     let currentFileTotalBytes: Int64
+    let sourceDeletion: SourceDeletionRecord?
+}
+
+private struct SourceDeletionRecord: Sendable {
+    let source: URL
+    let device: dev_t
+    let inode: ino_t
+    let size: Int64
 }
 
 struct AdaptiveParallelTuner {
@@ -1168,6 +1289,20 @@ private struct LStatResult {
 private struct LStatSizeResult {
     let status: Int32
     let errorCode: Int32
+    let size: Int64
+}
+
+private struct LStatDeviceResult {
+    let status: Int32
+    let errorCode: Int32
+    let device: dev_t
+}
+
+private struct LStatIdentityResult {
+    let status: Int32
+    let errorCode: Int32
+    let device: dev_t
+    let inode: ino_t
     let size: Int64
 }
 

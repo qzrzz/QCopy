@@ -55,7 +55,8 @@ struct ContentView: View {
                     SidebarRow(
                         title: section.title(language.language),
                         isSelected: selectedSection == section,
-                        badge: section == .history ? model.history.count : nil
+                        badge: section == .history ? model.history.count : nil,
+                        isDisabled: section == .transfer && model.isTransferring
                     ) {
                         withAnimation(.easeOut(duration: 0.16)) {
                             selectedSection = section
@@ -184,6 +185,7 @@ private struct SidebarRow: View {
     let title: String
     let isSelected: Bool
     let badge: Int?
+    let isDisabled: Bool
     let action: () -> Void
     @State private var isHovered = false
 
@@ -225,6 +227,8 @@ private struct SidebarRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.55 : 1)
         .onHover { isHovered = $0 }
     }
 }
