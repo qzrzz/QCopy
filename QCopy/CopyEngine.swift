@@ -231,137 +231,168 @@ enum CopyEngine {
         // 移动目录时绝不在 DirectoryEnumerator 仍在运行期间删除来源项。
         // 否则并发任务会改变目录内容，DirectoryEnumerator 可能静默跳过后续项。
         var pendingSourceDeletions: [SourceDeletionRecord] = []
-        var pendingParallelWork: [LeafTransferWork] = []
-        var parallelTuner = AdaptiveParallelTuner()
         let parallelEnabled = smartParallel
             && (mode == .copy || (mode == .move && parallelMove))
+        var transferPool: ContinuousTransferPool?
+        var initialParallelWork: [LeafTransferWork] = []
+        var initialFileSizes: [Int64] = []
 
-        while let item = enumerator.nextObject() as? URL {
-            try Task.checkCancellation()
-            let parentKey = item.deletingLastPathComponent().standardizedFileURL.path
-            guard let targetParent = directoryTargets[parentKey] else {
-                throw CopyError.cannotReadItem(path: item.path, reason: "无法确定目标父目录")
-            }
-            let destinationURL = targetParent.appendingPathComponent(item.lastPathComponent)
-            let values = try item.resourceValues(
-                forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey]
-            )
+        do {
+            while let item = enumerator.nextObject() as? URL {
+                try Task.checkCancellation()
+                let parentKey = item.deletingLastPathComponent().standardizedFileURL.path
+                guard let targetParent = directoryTargets[parentKey] else {
+                    throw CopyError.cannotReadItem(path: item.path, reason: "无法确定目标父目录")
+                }
+                let destinationURL = targetParent.appendingPathComponent(item.lastPathComponent)
+                let values = try item.resourceValues(
+                    forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey]
+                )
 
-            if values.isDirectory == true && values.isSymbolicLink != true {
-                sourceDirectories.append(item)
-                var resolvedDirectory = destinationURL
-                var directoryWasCreated = false
-                if let destinationKind = try destinationItemKind(at: destinationURL) {
-                    if destinationKind != .directory {
-                        switch conflictPolicy {
-                        case .replace:
-                            throw CopyError.typeConflict(source: item.path, destination: destinationURL.path)
-                        case .skip:
-                            enumerator.skipDescendants()
-                            state.filesSkipped += 1
-                            state.currentConcurrency = 1
-                            emit(
-                                state: state,
-                                phase: "已跳过",
-                                currentFile: item.lastPathComponent,
-                                currentFileBytes: 0,
-                                currentFileTotalBytes: 0,
-                                progress: progress
-                            )
-                            continue
-                        case .rename:
-                            resolvedDirectory = try uniqueURL(for: destinationURL)
-                            directoryWasCreated = true
+                if values.isDirectory == true && values.isSymbolicLink != true {
+                    sourceDirectories.append(item)
+                    var resolvedDirectory = destinationURL
+                    var directoryWasCreated = false
+                    if let destinationKind = try destinationItemKind(at: destinationURL) {
+                        if destinationKind != .directory {
+                            switch conflictPolicy {
+                            case .replace:
+                                throw CopyError.typeConflict(source: item.path, destination: destinationURL.path)
+                            case .skip:
+                                enumerator.skipDescendants()
+                                if let transferPool {
+                                    await transferPool.recordSkipped(
+                                        currentFile: item.lastPathComponent,
+                                        progress: progress
+                                    )
+                                } else {
+                                    state.filesSkipped += 1
+                                    state.currentConcurrency = 1
+                                    emit(
+                                        state: state,
+                                        phase: "已跳过",
+                                        currentFile: item.lastPathComponent,
+                                        currentFileBytes: 0,
+                                        currentFileTotalBytes: 0,
+                                        progress: progress
+                                    )
+                                }
+                                continue
+                            case .rename:
+                                resolvedDirectory = try uniqueURL(for: destinationURL)
+                                directoryWasCreated = true
+                            }
                         }
+                    } else {
+                        directoryWasCreated = true
                     }
-                } else {
-                    directoryWasCreated = true
+                    try fileManager.createDirectory(at: resolvedDirectory, withIntermediateDirectories: true)
+                    directoryTargets[item.standardizedFileURL.path] = resolvedDirectory
+                    if directoryWasCreated {
+                        createdDirectories.append(DirectoryMetadataPair(source: item, target: resolvedDirectory))
+                    }
+                    continue
                 }
-                try fileManager.createDirectory(at: resolvedDirectory, withIntermediateDirectories: true)
-                directoryTargets[item.standardizedFileURL.path] = resolvedDirectory
-                if directoryWasCreated {
-                    createdDirectories.append(DirectoryMetadataPair(source: item, target: resolvedDirectory))
-                }
-                continue
-            }
 
-            guard values.isSymbolicLink == true || values.isRegularFile == true else {
-                throw CopyError.unsupportedItem(item.path)
-            }
-
-            // 只读取当前枚举到的文件尺寸；不会为了计算总进度或文件总数而预扫来源。
-            let fileSize = values.fileSize.map(Int64.init)
-            if parallelEnabled,
-               values.isRegularFile == true || values.isSymbolicLink == true,
-               let fileSize,
-               AdaptiveParallelTuner.isParallelEligible(fileSize: fileSize) {
-                // 启动阶段最多缓存 32 个文件，依据这批文件的尺寸确定初始并发。
-                // 后续仍按同样的有限窗口取数，不会把整棵目录树的尺寸读入内存。
-                parallelTuner.prepare(
-                    forFileSizes: pendingParallelWork.map(\.fileSize) + [fileSize]
-                )
-                pendingParallelWork.append(
-                    LeafTransferWork(
-                        source: item,
-                        proposedTarget: destinationURL,
-                        mode: mode,
-                        conflictPolicy: conflictPolicy,
-                        fileSize: fileSize
-                    )
-                )
-                if pendingParallelWork.count >= parallelTuner.prefetchLimit {
-                    try await drainParallelWork(
-                        &pendingParallelWork,
-                        state: &state,
-                        tuner: &parallelTuner,
-                        sourceDeletions: &pendingSourceDeletions,
-                        progress: progress
-                    )
+                guard values.isSymbolicLink == true || values.isRegularFile == true else {
+                    throw CopyError.unsupportedItem(item.path)
                 }
-            } else {
-                try await drainAllParallelWork(
-                    &pendingParallelWork,
-                    state: &state,
-                    tuner: &parallelTuner,
-                    sourceDeletions: &pendingSourceDeletions,
-                    progress: progress
-                )
-                state.currentConcurrency = 1
-                let outcome = try transferLeaf(
+
+                // 只读取当前枚举到的文件尺寸；不会为了计算总进度或文件总数而预扫来源。
+                let fileSize = values.fileSize.map(Int64.init)
+                let work = LeafTransferWork(
                     source: item,
                     proposedTarget: destinationURL,
                     mode: mode,
                     conflictPolicy: conflictPolicy,
-                    state: state,
-                    deferSourceDeletion: mode == .move,
-                    progress: progress
+                    fileSize: fileSize
                 )
-                apply(outcome, to: &state, progress: progress)
-                if let sourceDeletion = outcome.sourceDeletion {
-                    pendingSourceDeletions.append(sourceDeletion)
+
+                if parallelEnabled {
+                    if let transferPool {
+                        try await transferPool.enqueue(work)
+                    } else {
+                        // 启动阶段最多收集 32 个文件的尺寸；worker pool 启动后，
+                        // 枚举器和 worker 会持续并行推进，不再按批次等待。
+                        initialParallelWork.append(work)
+                        if let fileSize {
+                            initialFileSizes.append(fileSize)
+                        }
+                        if initialParallelWork.count >= AdaptiveParallelTuner.prefetchBatchSize {
+                            let newPool = ContinuousTransferPool(
+                                initialState: state,
+                                initialFileSizes: initialFileSizes,
+                                progress: progress
+                            )
+                            transferPool = newPool
+                            await newPool.start()
+                            for initialWork in initialParallelWork {
+                                try await newPool.enqueue(initialWork)
+                            }
+                            initialParallelWork.removeAll(keepingCapacity: true)
+                            initialFileSizes.removeAll(keepingCapacity: true)
+                        }
+                    }
+                } else {
+                    state.currentConcurrency = 1
+                    let outcome = try transferLeaf(
+                        source: item,
+                        proposedTarget: destinationURL,
+                        mode: mode,
+                        conflictPolicy: conflictPolicy,
+                        state: state,
+                        deferSourceDeletion: mode == .move,
+                        progress: progress
+                    )
+                    apply(outcome, to: &state, progress: progress)
+                    if let sourceDeletion = outcome.sourceDeletion {
+                        pendingSourceDeletions.append(sourceDeletion)
+                    }
                 }
             }
+        } catch {
+            transferPool?.cancel()
+            if let transferPool {
+                _ = try? await transferPool.finish()
+            }
+            throw error
         }
 
         if let enumerationError {
-            // 枚举失败时仍先完成已经读入有限队列的文件，避免错误返回前丢失已发现的工作。
-            try await drainAllParallelWork(
-                &pendingParallelWork,
-                state: &state,
-                tuner: &parallelTuner,
-                sourceDeletions: &pendingSourceDeletions,
-                progress: progress
-            )
+            transferPool?.cancel()
+            if let transferPool {
+                _ = try? await transferPool.finish()
+            }
             throw enumerationError
         }
 
-        try await drainAllParallelWork(
-            &pendingParallelWork,
-            state: &state,
-            tuner: &parallelTuner,
-            sourceDeletions: &pendingSourceDeletions,
-            progress: progress
-        )
+        if parallelEnabled {
+            do {
+                if transferPool == nil {
+                    let newPool = ContinuousTransferPool(
+                        initialState: state,
+                        initialFileSizes: initialFileSizes,
+                        progress: progress
+                    )
+                    transferPool = newPool
+                    await newPool.start()
+                    for initialWork in initialParallelWork {
+                        try await newPool.enqueue(initialWork)
+                    }
+                }
+                if let transferPool {
+                    let result = try await transferPool.finish()
+                    state = result.state
+                    pendingSourceDeletions = result.sourceDeletions
+                }
+            } catch {
+                transferPool?.cancel()
+                if let transferPool {
+                    _ = try? await transferPool.finish()
+                }
+                throw error
+            }
+        }
 
         // 目录权限必须在内容完成后再恢复，否则只读权限或 ACL 可能阻止后续写入。
         // 只处理本次创建的目录；合并到已有目录时保留目标目录自身的元数据。
@@ -379,81 +410,6 @@ enum CopyEngine {
         if mode == .move {
             try removeEmptySourceDirectories(sourceDirectories.reversed())
         }
-    }
-
-    private static func drainAllParallelWork(
-        _ work: inout [LeafTransferWork],
-        state: inout EngineState,
-        tuner: inout AdaptiveParallelTuner,
-        sourceDeletions: inout [SourceDeletionRecord],
-        progress: @escaping @Sendable (CopyProgress) -> Void
-    ) async throws {
-        while !work.isEmpty {
-            try await drainParallelWork(
-                &work,
-                state: &state,
-                tuner: &tuner,
-                sourceDeletions: &sourceDeletions,
-                progress: progress
-            )
-        }
-    }
-
-    private static func drainParallelWork(
-        _ work: inout [LeafTransferWork],
-        state: inout EngineState,
-        tuner: inout AdaptiveParallelTuner,
-        sourceDeletions: inout [SourceDeletionRecord],
-        progress: @escaping @Sendable (CopyProgress) -> Void
-    ) async throws {
-        guard !work.isEmpty else { return }
-        // 预取窗口可以有 32 个文件，但每次实际启动的任务严格受当前
-        // 并发数和这批文件的尺寸上限约束，避免一次性启动 32 路。
-        let firstFileLimit = tuner.concurrencyLimit(forFileSize: work[0].fileSize)
-        let batchTarget = min(work.count, tuner.concurrency, firstFileLimit)
-        var batchCount = 0
-        for item in work.prefix(max(1, batchTarget)) {
-            guard tuner.concurrencyLimit(forFileSize: item.fileSize) >= batchTarget else { break }
-            batchCount += 1
-        }
-        let batch = Array(work.prefix(max(1, batchCount)))
-        work.removeFirst(batch.count)
-        // Snapshot the actual batch width so every callback reports a consistent value.
-        tuner.markBatchStarted()
-        state.currentConcurrency = batch.count
-        let snapshot = state
-        let startedAt = Date()
-
-        let outcomes = try await withThrowingTaskGroup(of: LeafTransferOutcome.self) { group in
-            for item in batch {
-                group.addTask {
-                    try transferLeaf(
-                        source: item.source,
-                        proposedTarget: item.proposedTarget,
-                        mode: item.mode,
-                        conflictPolicy: item.conflictPolicy,
-                        state: snapshot,
-                        deferSourceDeletion: item.mode == .move,
-                        progress: progress
-                    )
-                }
-            }
-            var collected: [LeafTransferOutcome] = []
-            for try await outcome in group {
-                collected.append(outcome)
-            }
-            return collected
-        }
-
-        let elapsed = max(Date().timeIntervalSince(startedAt), 0.001)
-        let bytes = outcomes.reduce(Int64(0)) { $0 + $1.bytesCopied }
-        for outcome in outcomes {
-            apply(outcome, to: &state, progress: progress)
-            if let sourceDeletion = outcome.sourceDeletion {
-                sourceDeletions.append(sourceDeletion)
-            }
-        }
-        tuner.observe(bytes: bytes, duration: elapsed)
     }
 
     private static func apply(
@@ -1121,6 +1077,408 @@ enum CopyEngine {
             filesSkipped: state.filesSkipped
         ))
     }
+
+    private struct ContinuousPoolResult: Sendable {
+        let state: EngineState
+        let sourceDeletions: [SourceDeletionRecord]
+    }
+
+    /// 限制枚举器与 worker 之间的未完成项目总量，避免把整棵目录树放入内存。
+    private actor ParallelWorkSlots {
+        private var available: Int
+        private var cancelled = false
+        private var waiters: [CheckedContinuation<Bool, Never>] = []
+
+        init(capacity: Int) {
+            available = max(1, capacity)
+        }
+
+        func acquire() async -> Bool {
+            guard !cancelled else { return false }
+            if available > 0 {
+                available -= 1
+                return true
+            }
+            return await withCheckedContinuation { continuation in
+                waiters.append(continuation)
+            }
+        }
+
+        func release() {
+            guard !cancelled else { return }
+            if let continuation = waiters.first {
+                waiters.removeFirst()
+                continuation.resume(returning: true)
+            } else {
+                available += 1
+            }
+        }
+
+        func cancel() {
+            guard !cancelled else { return }
+            cancelled = true
+            let pending = waiters
+            waiters.removeAll()
+            for continuation in pending {
+                continuation.resume(returning: false)
+            }
+        }
+    }
+
+    /// 全局并发闸门。worker 数量固定为 32，实际运行路数通过闸门连续调整，
+    /// 不再因为一个批次结束而整体停顿。64 MB 以上文件使用串行屏障。
+    private actor ParallelConcurrencyGate {
+        private struct Waiter {
+            let fileLimit: Int
+            let continuation: CheckedContinuation<Bool, Never>
+        }
+
+        private var limit: Int
+        private var active = 0
+        private var activeMedium = 0
+        private var activeSerial = false
+        private var serialWaiters = 0
+        private var waiters: [Waiter] = []
+        private var cancelled = false
+
+        init(limit: Int) {
+            self.limit = max(1, min(limit, AdaptiveParallelTuner.maximumConcurrencyLimit))
+        }
+
+        func acquire(fileSize: Int64?) async -> Bool {
+            let fileLimit = Self.fileLimit(for: fileSize)
+            guard !cancelled else { return false }
+            if waiters.isEmpty, canAcquire(fileLimit) {
+                grant(fileLimit)
+                return true
+            }
+            if fileLimit <= 1 { serialWaiters += 1 }
+            return await withCheckedContinuation { continuation in
+                waiters.append(Waiter(fileLimit: fileLimit, continuation: continuation))
+            }
+        }
+
+        func release(fileSize: Int64?) {
+            let fileLimit = Self.fileLimit(for: fileSize)
+            active = max(0, active - 1)
+            if fileLimit <= 1 { activeSerial = false }
+            if fileLimit == 2 { activeMedium = max(0, activeMedium - 1) }
+            pumpWaiters()
+        }
+
+        func setLimit(_ newLimit: Int) {
+            limit = max(1, min(newLimit, AdaptiveParallelTuner.maximumConcurrencyLimit))
+            pumpWaiters()
+        }
+
+        func activeCount() -> Int {
+            active
+        }
+
+        func cancel() {
+            guard !cancelled else { return }
+            cancelled = true
+            let pending = waiters
+            waiters.removeAll()
+            for waiter in pending {
+                waiter.continuation.resume(returning: false)
+            }
+        }
+
+        private static func fileLimit(for fileSize: Int64?) -> Int {
+            guard let fileSize else { return 1 }
+            return AdaptiveParallelTuner.maximumSafeConcurrency(forFileSize: fileSize)
+        }
+
+        private func canAcquire(_ fileLimit: Int) -> Bool {
+            guard !cancelled, !activeSerial else { return false }
+            if fileLimit <= 1 {
+                return active == 0
+            }
+            guard serialWaiters == 0, active < limit else { return false }
+            if fileLimit == 2, activeMedium >= 2 { return false }
+            return true
+        }
+
+        private func grant(_ fileLimit: Int) {
+            active += 1
+            if fileLimit <= 1 { activeSerial = true }
+            if fileLimit == 2 { activeMedium += 1 }
+        }
+
+        private func pumpWaiters() {
+            // 串行文件一旦排队，先让当前活动任务自然排空；否则队首的普通
+            // 文件会挡住串行 waiter，形成永久等待。
+            if serialWaiters > 0 {
+                guard active == 0,
+                      let serialIndex = waiters.firstIndex(where: { $0.fileLimit <= 1 }) else {
+                    return
+                }
+                let waiter = waiters.remove(at: serialIndex)
+                serialWaiters = max(0, serialWaiters - 1)
+                grant(waiter.fileLimit)
+                waiter.continuation.resume(returning: true)
+                return
+            }
+
+            while let waiter = waiters.first, canAcquire(waiter.fileLimit) {
+                waiters.removeFirst()
+                grant(waiter.fileLimit)
+                waiter.continuation.resume(returning: true)
+            }
+        }
+    }
+
+    private actor ParallelTransferCoordinator {
+        private var state: EngineState
+        private var tuner: AdaptiveParallelTuner
+        private var sourceDeletions: [SourceDeletionRecord] = []
+        private let gate: ParallelConcurrencyGate
+        private let progress: @Sendable (CopyProgress) -> Void
+
+        init(
+            initialState: EngineState,
+            initialFileSizes: [Int64],
+            gate: ParallelConcurrencyGate,
+            progress: @escaping @Sendable (CopyProgress) -> Void
+        ) {
+            var tuner = AdaptiveParallelTuner()
+            tuner.prepare(forFileSizes: initialFileSizes)
+            self.state = initialState
+            self.tuner = tuner
+            self.gate = gate
+            self.progress = progress
+        }
+
+        func stateSnapshot() -> EngineState {
+            state
+        }
+
+        /// worker 获得执行槽后立即发出一次快照。
+        /// 小文件可能在下一次完成事件前已经结束；如果只在完成时上报，
+        /// UI 和统计图会错过真实的峰值并发。
+        func workerStarted(currentFile: String, currentFileTotalBytes: Int64) async {
+            state.currentConcurrency = max(1, await gate.activeCount())
+            emit(
+                state: state,
+                phase: "传输中",
+                currentFile: currentFile,
+                currentFileBytes: 0,
+                currentFileTotalBytes: currentFileTotalBytes,
+                progress: progress
+            )
+        }
+
+        func record(_ outcome: LeafTransferOutcome, duration: TimeInterval) async {
+            state.bytesCopied += outcome.bytesCopied
+            state.filesCopied += outcome.filesCopied
+            state.filesSkipped += outcome.filesSkipped
+            state.currentConcurrency = max(1, await gate.activeCount())
+            if let sourceDeletion = outcome.sourceDeletion {
+                sourceDeletions.append(sourceDeletion)
+            }
+            emit(
+                state: state,
+                phase: outcome.phase,
+                currentFile: outcome.currentFile,
+                currentFileBytes: outcome.currentFileBytes,
+                currentFileTotalBytes: outcome.currentFileTotalBytes,
+                progress: progress
+            )
+            let newLimit = tuner.observe(bytes: outcome.bytesCopied, duration: duration)
+            if let newLimit {
+                await gate.setLimit(newLimit)
+            }
+        }
+
+        func recordSkipped(currentFile: String, progress: @escaping @Sendable (CopyProgress) -> Void) async {
+            state.filesSkipped += 1
+            state.currentConcurrency = max(1, await gate.activeCount())
+            emit(
+                state: state,
+                phase: "已跳过",
+                currentFile: currentFile,
+                currentFileBytes: 0,
+                currentFileTotalBytes: 0,
+                progress: progress
+            )
+        }
+
+        func result() -> ContinuousPoolResult {
+            ContinuousPoolResult(state: state, sourceDeletions: sourceDeletions)
+        }
+    }
+
+    private final class PoolFailureBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var storedError: Error?
+        private var wasCancelled = false
+
+        func set(_ error: Error) {
+            lock.lock()
+            defer { lock.unlock() }
+            if storedError == nil, !wasCancelled {
+                storedError = error
+            }
+        }
+
+        func cancel() {
+            lock.lock()
+            wasCancelled = true
+            lock.unlock()
+        }
+
+        func error() -> Error? {
+            lock.lock()
+            defer { lock.unlock() }
+            return storedError
+        }
+
+        func isCancelled() -> Bool {
+            lock.lock()
+            defer { lock.unlock() }
+            return wasCancelled
+        }
+    }
+
+    private final class ContinuousTransferPool: @unchecked Sendable {
+        private let stream: AsyncStream<LeafTransferWork>
+        private let continuation: AsyncStream<LeafTransferWork>.Continuation
+        private let slots = ParallelWorkSlots(capacity: AdaptiveParallelTuner.prefetchBatchSize)
+        private let gate: ParallelConcurrencyGate
+        private let coordinator: ParallelTransferCoordinator
+        private let progress: @Sendable (CopyProgress) -> Void
+        private let failure = PoolFailureBox()
+        private var workers: [Task<Void, Never>] = []
+        private var started = false
+
+        init(
+            initialState: EngineState,
+            initialFileSizes: [Int64],
+            progress: @escaping @Sendable (CopyProgress) -> Void
+        ) {
+            var continuation: AsyncStream<LeafTransferWork>.Continuation?
+            stream = AsyncStream(bufferingPolicy: .unbounded) { value in
+                continuation = value
+            }
+            self.continuation = continuation!
+            self.progress = progress
+
+            var tuner = AdaptiveParallelTuner()
+            tuner.prepare(forFileSizes: initialFileSizes)
+            gate = ParallelConcurrencyGate(limit: tuner.concurrency)
+            coordinator = ParallelTransferCoordinator(
+                initialState: initialState,
+                initialFileSizes: initialFileSizes,
+                gate: gate,
+                progress: progress
+            )
+        }
+
+        func start() async {
+            guard !started else { return }
+            started = true
+            workers = (0..<AdaptiveParallelTuner.maximumConcurrencyLimit).map { _ in
+                Task { [weak self] in
+                    await self?.workerLoop()
+                }
+            }
+        }
+
+        func enqueue(_ work: LeafTransferWork) async throws {
+            try Task.checkCancellation()
+            guard await slots.acquire() else { throw CancellationError() }
+            switch continuation.yield(work) {
+            case .enqueued:
+                return
+            case .dropped, .terminated:
+                await slots.release()
+                if let error = failure.error() { throw error }
+                throw CancellationError()
+            @unknown default:
+                await slots.release()
+                throw CancellationError()
+            }
+        }
+
+        func recordSkipped(currentFile: String, progress: @escaping @Sendable (CopyProgress) -> Void) async {
+            await coordinator.recordSkipped(currentFile: currentFile, progress: progress)
+        }
+
+        func finish() async throws -> ContinuousPoolResult {
+            try await withTaskCancellationHandler(operation: {
+                continuation.finish()
+                for worker in workers {
+                    await worker.value
+                }
+                try Task.checkCancellation()
+                if let error = failure.error() {
+                    throw error
+                }
+                return await coordinator.result()
+            }, onCancel: {
+                cancel()
+            })
+        }
+
+        func cancel() {
+            failure.cancel()
+            continuation.finish()
+            Task {
+                await gate.cancel()
+                await slots.cancel()
+            }
+            for worker in workers {
+                worker.cancel()
+            }
+        }
+
+        private func workerLoop() async {
+            for await work in stream {
+                guard !failure.isCancelled() else {
+                    await slots.release()
+                    break
+                }
+                let acquired = await gate.acquire(fileSize: work.fileSize)
+                guard acquired else {
+                    await slots.release()
+                    break
+                }
+
+                let startedAt = Date()
+                do {
+                    await coordinator.workerStarted(
+                        currentFile: work.source.lastPathComponent,
+                        currentFileTotalBytes: work.fileSize ?? 0
+                    )
+                    let baseState = await coordinator.stateSnapshot()
+                    let outcome = try CopyEngine.transferLeaf(
+                        source: work.source,
+                        proposedTarget: work.proposedTarget,
+                        mode: work.mode,
+                        conflictPolicy: work.conflictPolicy,
+                        state: baseState,
+                        deferSourceDeletion: work.mode == .move,
+                        progress: progress
+                    )
+                    await coordinator.record(
+                        outcome,
+                        duration: max(Date().timeIntervalSince(startedAt), 0.001)
+                    )
+                } catch {
+                    await gate.release(fileSize: work.fileSize)
+                    await slots.release()
+                    if !failure.isCancelled() {
+                        failure.set(error)
+                        cancel()
+                    }
+                    break
+                }
+                await gate.release(fileSize: work.fileSize)
+                await slots.release()
+            }
+        }
+    }
 }
 
 private struct POSIXResult {
@@ -1140,7 +1498,7 @@ private struct LeafTransferWork: Sendable {
     let mode: TransferMode
     let conflictPolicy: ConflictPolicy
     /// 当前枚举到该文件时读取的尺寸；不做全量尺寸预取。
-    let fileSize: Int64
+    let fileSize: Int64?
 }
 
 private struct LeafTransferOutcome: Sendable {
@@ -1172,19 +1530,19 @@ struct AdaptiveParallelTuner {
     let maximumConcurrency: Int
     var concurrency: Int = 2
     private var previousThroughput: Double?
+    private var observedBytes: Int64 = 0
+    private var observedDuration: TimeInterval = 0
+    private var observedFiles = 0
     private var stableWindows = 0
-    private var hasStartedBatch = false
+    private var cooldownWindows = 0
+    private var hasPrepared = false
 
     init() {
         maximumConcurrency = Self.maximumConcurrencyLimit
     }
 
-    /// 首批固定为 32；后续窗口也不会超过当前的 32 路上限。
-    var prefetchLimit: Int {
-        hasStartedBatch
-            ? max(Self.prefetchBatchSize, concurrency)
-            : Self.prefetchBatchSize
-    }
+    /// 首批固定为 32；worker pool 启动后继续使用同样的有限窗口。
+    var prefetchLimit: Int { Self.prefetchBatchSize }
 
     static func isParallelEligible(fileSize: Int64) -> Bool {
         fileSize >= 0 && fileSize < parallelEligibilityLimit
@@ -1217,9 +1575,10 @@ struct AdaptiveParallelTuner {
 
     static func initialConcurrency(forFileSizes fileSizes: [Int64]) -> Int {
         guard !fileSizes.isEmpty else { return 1 }
-        // 先按尺寸分组，再从最适合并行的组开始；实际启动时仍会按每个文件的
-        // maximumSafeConcurrency 限制批次，因而不会让大文件与小文件互相拖慢。
-        return fileSizes.map(initialConcurrency(forFileSize:)).max() ?? 1
+        // 使用中位数而不是最大值，避免首批中偶然出现一个极小文件就把整个
+        // worker pool 拉到高并发；每个文件仍由 gate 施加自己的尺寸上限。
+        let starts = fileSizes.map(initialConcurrency(forFileSize:)).sorted()
+        return starts[(starts.count - 1) / 2]
     }
 
     mutating func prepare(forFileSize fileSize: Int64) {
@@ -1227,7 +1586,8 @@ struct AdaptiveParallelTuner {
     }
 
     mutating func prepare(forFileSizes fileSizes: [Int64]) {
-        guard !hasStartedBatch, !fileSizes.isEmpty else { return }
+        guard !hasPrepared, !fileSizes.isEmpty else { return }
+        hasPrepared = true
         concurrency = min(
             maximumConcurrency,
             Self.initialConcurrency(forFileSizes: fileSizes)
@@ -1238,29 +1598,56 @@ struct AdaptiveParallelTuner {
         Self.maximumSafeConcurrency(forFileSize: fileSize)
     }
 
-    mutating func markBatchStarted() {
-        hasStartedBatch = true
-    }
+    /// 兼容旧测试/调用方；持续 worker pool 不再按批次切换状态。
+    mutating func markBatchStarted() {}
 
-    mutating func observe(bytes: Int64, duration: TimeInterval) {
-        guard bytes > 0 else { return }
-        let throughput = Double(bytes) / max(duration, 0.001)
-        if let previousThroughput {
-            if throughput < previousThroughput * 0.92 {
-                concurrency = max(1, concurrency - 1)
-                stableWindows = 0
-            } else if throughput > previousThroughput * 1.08 {
-                concurrency = min(maximumConcurrency, concurrency + 1)
-                stableWindows = 0
-            } else {
-                stableWindows += 1
-                if stableWindows >= 2 {
-                    concurrency = min(maximumConcurrency, concurrency + 1)
-                    stableWindows = 0
-                }
-            }
+    /// 按连续完成窗口调节并发，而不是每个批次调节。
+    /// 返回 nil 表示本次完成还不足以触发调整。
+    mutating func observe(bytes: Int64, duration: TimeInterval) -> Int? {
+        observedBytes += max(0, bytes)
+        observedDuration += max(0.001, duration)
+        observedFiles += 1
+
+        guard observedFiles >= 8 || observedDuration >= 2 else { return nil }
+        let throughput = Double(observedBytes) / max(observedDuration, 0.001)
+        observedBytes = 0
+        observedDuration = 0
+        observedFiles = 0
+
+        guard let previousThroughput else {
+            self.previousThroughput = throughput
+            return nil
         }
-        self.previousThroughput = throughput
+
+        // 对连续窗口做 EMA，并设置 15% 滞回，过滤网络卷的瞬时抖动。
+        let smoothedThroughput = previousThroughput * 0.7 + throughput * 0.3
+        self.previousThroughput = smoothedThroughput
+        if cooldownWindows > 0 {
+            cooldownWindows -= 1
+            return nil
+        }
+
+        if smoothedThroughput < previousThroughput * 0.85 {
+            concurrency = max(1, concurrency - 1)
+            stableWindows = 0
+            cooldownWindows = 2
+            return concurrency
+        }
+        if smoothedThroughput > previousThroughput * 1.15 {
+            concurrency = min(maximumConcurrency, concurrency + 1)
+            stableWindows = 0
+            cooldownWindows = 2
+            return concurrency
+        }
+
+        stableWindows += 1
+        if stableWindows >= 2 {
+            concurrency = min(maximumConcurrency, concurrency + 1)
+            stableWindows = 0
+            cooldownWindows = 2
+            return concurrency
+        }
+        return nil
     }
 }
 

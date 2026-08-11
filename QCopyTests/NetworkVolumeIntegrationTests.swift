@@ -43,16 +43,18 @@ final class NetworkVolumeIntegrationTests: XCTestCase {
 
         let moveSource = localFixture.appendingPathComponent("cross-volume-move", isDirectory: true)
         try fileManager.createDirectory(at: moveSource, withIntermediateDirectories: true)
-        for index in 0..<16 {
+        // 至少超过首批预取窗口，覆盖枚举器与持续 worker pool 同时推进的路径。
+        for index in 0..<64 {
             try Data("move-data-\(index)".utf8)
                 .write(to: moveSource.appendingPathComponent("file-\(index).txt"))
         }
-        _ = try await run(
+        let moveResult = try await run(
             source: moveSource,
             destination: remoteFixture,
             mode: .move,
             policy: .replace
         )
+        XCTAssertEqual(moveResult.filesCopied, 64)
 
         XCTAssertEqual(
             try Data(contentsOf: remoteFixture.appendingPathComponent("directory-payload/inside.bin")),
@@ -71,7 +73,7 @@ final class NetworkVolumeIntegrationTests: XCTestCase {
             Data("rename-data".utf8)
         )
         XCTAssertFalse(fileManager.fileExists(atPath: moveSource.path))
-        for index in 0..<16 {
+        for index in 0..<64 {
             XCTAssertEqual(
                 try Data(contentsOf: remoteFixture.appendingPathComponent("cross-volume-move/file-\(index).txt")),
                 Data("move-data-\(index)".utf8)
