@@ -74,8 +74,8 @@ final class LanguageSettings: ObservableObject {
     }
 
     /// 引擎 / 内部 phase 原文 → 当前语言。
-    func phase(_ raw: String) -> String {
-        L10n.phase(raw, language: language)
+    func phase(_ raw: String, mode: TransferMode? = nil) -> String {
+        L10n.phase(raw, language: language, mode: mode)
     }
 
     func format(_ key: L10n.Key, _ args: CVarArg...) -> String {
@@ -96,7 +96,7 @@ enum L10n {
 
         case modeCopy, modeMove, modeCopyDesc, modeMoveDesc
         case conflictReplace, conflictSkip, conflictRename, conflictSection
-        case smartParallel, transferModePicker, transferModeA11y
+        case smartParallel, smartParallelHint, transferModePicker, transferModeA11y
 
         case pathSource, pathDestination, pathSourceHelper, pathDestinationHelper
         case browse, recentUsed, browseOrChoosePath, recentPaths, pleaseChooseLocation
@@ -105,7 +105,7 @@ enum L10n {
         case startCopy, startMove, cancel, collapse, stoppingSafely
         case readyCopy, readyMove, startHint, needPathsHint
 
-        case stateQueued, stateTransferring, stateCancelling, stateCompleted, stateCancelled, stateFailed
+        case stateQueued, stateTransferring, stateCopying, stateMoving, stateCancelling, stateCompleted, stateCancelled, stateFailed
 
         case transferred, processed, speed, averageSpeed, concurrency, skipped
         case unitItems, unitStreams, transferStats, waitingTransferData, noSpeedSamples
@@ -153,6 +153,7 @@ enum L10n {
         .conflictRename: "自动重命名",
         .conflictSection: "冲突处理",
         .smartParallel: "智能并发",
+        .smartParallelHint: "复制和跨卷移动按文件大小动态调整，最高 32 路；500 MB 以上串行",
         .transferModePicker: "传输方式",
         .transferModeA11y: "复制或移动",
 
@@ -183,6 +184,8 @@ enum L10n {
 
         .stateQueued: "等待开始",
         .stateTransferring: "正在传输",
+        .stateCopying: "正在复制",
+        .stateMoving: "正在移动",
         .stateCancelling: "正在停止",
         .stateCompleted: "已完成",
         .stateCancelled: "已取消",
@@ -265,6 +268,7 @@ enum L10n {
         .conflictRename: "Auto-rename",
         .conflictSection: "Conflict handling",
         .smartParallel: "Smart parallel",
+        .smartParallelHint: "Copy and cross-volume move adapt concurrency by file size, up to 32 streams; files over 500 MB stay serial",
         .transferModePicker: "Transfer mode",
         .transferModeA11y: "Copy or move",
 
@@ -295,6 +299,8 @@ enum L10n {
 
         .stateQueued: "Queued",
         .stateTransferring: "Transferring",
+        .stateCopying: "Copying",
+        .stateMoving: "Moving",
         .stateCancelling: "Stopping",
         .stateCompleted: "Completed",
         .stateCancelled: "Cancelled",
@@ -355,10 +361,17 @@ enum L10n {
     }
 
     /// 引擎 phase 原文（多为中文）→ 当前语言文案。
-    static func phase(_ raw: String, language: AppLanguage) -> String {
+    static func phase(_ raw: String, language: AppLanguage, mode: TransferMode? = nil) -> String {
         switch raw {
         case "传输中":
-            return string(.stateTransferring, language: language)
+            switch mode {
+            case .copy:
+                return string(.stateCopying, language: language)
+            case .move:
+                return string(.stateMoving, language: language)
+            case nil:
+                return string(.stateTransferring, language: language)
+            }
         case "同卷快速移动":
             return string(.phaseSameVolumeMove, language: language)
         case "已跳过":
@@ -433,10 +446,15 @@ extension ConflictPolicy {
 }
 
 extension TransferState {
-    func title(_ lang: AppLanguage) -> String {
+    func title(_ lang: AppLanguage, mode: TransferMode? = nil) -> String {
         switch self {
         case .queued: L10n.string(.stateQueued, language: lang)
-        case .transferring: L10n.string(.stateTransferring, language: lang)
+        case .transferring:
+            switch mode {
+            case .copy: L10n.string(.stateCopying, language: lang)
+            case .move: L10n.string(.stateMoving, language: lang)
+            case nil: L10n.string(.stateTransferring, language: lang)
+            }
         case .cancelling: L10n.string(.stateCancelling, language: lang)
         case .completed: L10n.string(.stateCompleted, language: lang)
         case .cancelled: L10n.string(.stateCancelled, language: lang)
