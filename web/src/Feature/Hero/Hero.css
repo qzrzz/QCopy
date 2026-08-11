@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: center;
   min-height: calc(100vh - 200px);
-  padding: 72px 24px 96px;
+    padding: 72px 24px 42px;
 }
 
 .heroInner {
@@ -19,17 +19,22 @@
   height: 256px;
   margin-bottom: 28px;
   border-radius: 22px;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+ 
 }
 
 .heroTitle {
   margin: 0;
-  color: #fff;
+  color: linear-gradient(#a7f9c0 -5.99999%, #fff 50%);
+  color: #0000;
+  background: linear-gradient(#b7f2ff 20%, #fff 60%);
+  -webkit-background-clip: text;
+  background-clip: text;
   font-family: "Pally-Variable", "SF Pro Display", sans-serif;
-  font-size: clamp(40px, 7vw, 64px);
+  font-size: 80px;
   font-weight: 700;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.05em;
   line-height: 1.05;
+  padding-bottom: 8px;
 }
 
 .heroTagline {

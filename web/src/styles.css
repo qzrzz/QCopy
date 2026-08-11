@@ -27,7 +27,6 @@
     "GeneralSans-Variable", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   --font-display: "GeneralSans-Variable", "SF Pro Display", sans-serif;
- 
 
   color: #fff;
   background: #000;
@@ -52,6 +51,11 @@ body {
   margin: 0;
   overflow-x: hidden;
   background: #000;
+}
+
+img.hero-shot {
+  margin: auto;
+  margin-bottom: 30px;
 }
 
 button,
@@ -119,13 +123,10 @@ img {
 }
 
 /* ==========================================================================
-   FeatureCard（BEM：left / right / bottom + 无媒体占位）
+   FeatureCard（仅 image + style：left / right / bottom / center）
    ========================================================================== */
 
 .featureCard {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-  gap: 0;
   width: min(100% - (var(--page-gutter) * 2), 1100px);
   min-height: 280px;
   margin: 0 auto;
@@ -135,47 +136,22 @@ img {
   background: var(--surface);
 }
 
-.featureCard__info {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 12px;
-  padding: 36px 32px;
-}
-
-.featureCard__info h3 {
-  margin: 0;
-  color: #fff;
-  font-family: var(--font-display);
-  font-size: clamp(22px, 2.6vw, 28px);
-  font-weight: 650;
-  letter-spacing: -0.03em;
-  line-height: 1.2;
-}
-
-.featureCard__info p {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 15px;
-  line-height: 1.55;
-}
-
 .featureCard__media {
   position: relative;
-  min-height: 220px;
-  background:
-    radial-gradient(circle at 30% 20%, var(--accent-soft), transparent 55%),
-    linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01));
+  width: 100%;
+  min-height: 280px;
+  height: 100%;
 }
 
 .featureCard__media--empty {
   display: grid;
   place-items: center;
+  min-height: 240px;
 }
 
 .featureCard__placeholderLabel {
   padding: 8px 12px;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
+
   border-radius: 999px;
   color: rgba(255, 255, 255, 0.35);
   font-size: 12px;
@@ -183,54 +159,55 @@ img {
   letter-spacing: 0.02em;
 }
 
-.featureCard__shot,
-.featureCard__video {
-  width: 100%;
-  height: 100%;
+.featureCard__shot {
+  display: block;
+  width: auto;
+  height: auto;
+  min-height: 280px;
   object-fit: cover;
   object-position: center top;
 }
 
-.featureCard__video {
-  display: block;
-  outline: none;
+/* left / right / bottom / center：构图差异 */
+.featureCard--left .featureCard__shot {
+  object-position: left top;
+}
+
+.featureCard--right .featureCard__shot {
+  object-position: right top;
+}
+
+.featureCard--bottom .featureCard__shot {
+  object-position: center bottom;
+}
+
+.featureCard--bottom .featureCard__media,
+.featureCard--bottom .featureCard__shot {
+  min-height: 320px;
+}
+
+/* center：图片在卡片内水平垂直居中，完整显示 */
+.featureCard--center .featureCard__media {
+  display: grid;
+  place-items: center;
+  min-height: 280px;
+}
+
+.featureCard--center {
   border: none;
+  background: transparent;
 }
 
-/* left：文案左，媒体右（默认 grid 顺序） */
-.featureCard--left {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+.featureCard--center .featureCard__shot {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  min-height: 0;
+  object-fit: contain;
+  object-position: center center;
 }
 
-/* right：媒体左，文案右 */
-.featureCard--right {
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-}
-
-.featureCard--right .featureCard__info {
-  order: 2;
-}
-
-.featureCard--right .featureCard__media {
-  order: 1;
-}
-
-/* bottom：媒体上，文案下 */
-.featureCard--bottom {
-  grid-template-columns: 1fr;
-  grid-template-rows: minmax(200px, 1.2fr) auto;
-}
-
-.featureCard--bottom .featureCard__media {
-  order: 1;
-  min-height: 240px;
-}
-
-.featureCard--bottom .featureCard__info {
-  order: 2;
-}
-
-/* 无媒体时卡片更紧凑 */
 .featureCard--placeholder {
   min-height: 240px;
 }
@@ -246,30 +223,13 @@ img {
   }
 
   .featureCard,
-  .featureCard--left,
-  .featureCard--right {
-    grid-template-columns: 1fr;
+  .featureCard__media,
+  .featureCard__shot {
+    min-height: 200px;
   }
 
-  .featureCard--right .featureCard__info,
-  .featureCard--right .featureCard__media {
-    order: initial;
-  }
-
-  .featureCard__info {
-    padding: 28px 22px 20px;
-  }
-
-  .featureCard__media {
-    min-height: 180px;
-    order: 2;
-  }
-
-  .featureCard--bottom .featureCard__media {
-    order: 1;
-  }
-
-  .featureCard--bottom .featureCard__info {
-    order: 2;
+  .featureCard--bottom .featureCard__media,
+  .featureCard--bottom .featureCard__shot {
+    min-height: 220px;
   }
 }

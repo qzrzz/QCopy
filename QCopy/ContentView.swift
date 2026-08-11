@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var model: CopyViewModel
+    @EnvironmentObject private var language: LanguageSettings
     @State private var selectedSection: SidebarSection = .transfer
     @State private var isSourceDropTargeted = false
     @State private var isDestinationDropTargeted = false
@@ -27,13 +28,12 @@ struct ContentView: View {
                     TransferModePicker()
                 }
             }
-            if selectedSection == .history {
-                ToolbarItem(placement: .principal) {
-                    Text("操作记录")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.primary)
+            if selectedSection == .history, !model.history.isEmpty {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(language.t(.clearHistory)) {
+                        model.clearTransferHistory()
+                    }
                 }
-                .sharedBackgroundVisibility(.hidden)
             }
         }
         .overlay(alignment: .topLeading) {
@@ -45,6 +45,7 @@ struct ContentView: View {
             QCopyVisualEffect(material: .hudWindow, blending: .behindWindow)
                 .ignoresSafeArea()
         )
+        .foregroundStyle(QCopyTheme.Colors.primaryText)
     }
 
     private var sidebar: some View {
@@ -52,7 +53,7 @@ struct ContentView: View {
             VStack(spacing: 8) {
                 ForEach(SidebarSection.allCases) { section in
                     SidebarRow(
-                        section: section,
+                        title: section.title(language.language),
                         isSelected: selectedSection == section,
                         badge: section == .history ? model.history.count : nil
                     ) {
@@ -69,14 +70,11 @@ struct ContentView: View {
         .padding(.top, 10)
         .padding(.horizontal, 14)
         .padding(.bottom, 14)
-        .frame(maxHeight: .infinity, alignment: .top)
+        // 强制占满侧栏列高/宽，避免底部或边缘留透明空洞
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background {
-            ZStack(alignment: .trailing) {
-                QCopyVisualEffect(material: .sidebar, blending: .behindWindow)
-                QCopyTheme.Colors.sidebarGlassTint
-                    .allowsHitTesting(false)
-            }
-            .ignoresSafeArea()
+            sidebarChromeBackground
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
@@ -119,23 +117,51 @@ struct ContentView: View {
                 HistoryView()
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        // 背景铺满详情区，避免内容未撑满时底部透出空洞
+        .background {
+            contentChromeBackground
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    /// 右侧内容区背景材质。
+    private var contentChromeBackground: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    QCopyTheme.Colors.accent.opacity(0.055),
+                    QCopyTheme.Colors.accentPurple.opacity(0.035),
+                    Color.clear
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            QCopyVisualEffect(material: .hudWindow, blending: .withinWindow)
+                .opacity(0.72)
+        }
+        .ignoresSafeArea()
+    }
+
+    /// 侧栏：同款 hudWindow，叠半透明白提亮，比右侧更浅。
+    private var sidebarChromeBackground: some View {
+        ZStack {
+            QCopyVisualEffect(material: .hudWindow, blending: .withinWindow)
+                .opacity(0.5)
+            QCopyTheme.Colors.sidebarGlassTint
+                .allowsHitTesting(false)
+            LinearGradient(
+                colors: [
+                    QCopyTheme.Colors.accent.opacity(0.04),
+                    Color.clear
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .allowsHitTesting(false)
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            ZStack {
-                LinearGradient(
-                    colors: [
-                        QCopyTheme.Colors.accent.opacity(0.055),
-                        QCopyTheme.Colors.accentPurple.opacity(0.035),
-                        Color.clear
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                QCopyVisualEffect(material: .hudWindow, blending: .withinWindow)
-                    .opacity(0.72)
-            }
-            .ignoresSafeArea()
-        )
+        .ignoresSafeArea()
     }
 }
 
@@ -144,15 +170,18 @@ enum SidebarSection: String, CaseIterable, Identifiable {
     case history
 
     var id: String { rawValue }
-    var title: String { self == .transfer ? "复制 / 移动" : "操作记录" }
-    var subtitle: String { self == .transfer ? "创建新的传输任务" : "查看已完成的任务" }
+
+    func title(_ lang: AppLanguage) -> String {
+        L10n.string(self == .transfer ? .sectionTransfer : .sectionHistory, language: lang)
+    }
+
     var symbol: String { self == .transfer ? "arrow.triangle.2.circlepath" : "clock.arrow.circlepath" }
     var tint: Color { self == .transfer ? QCopyTheme.Colors.accent : QCopyTheme.Colors.accentPurple }
     var iconBackground: Color { self == .transfer ? QCopyTheme.Colors.accent.opacity(0.16) : QCopyTheme.Colors.accentPurple.opacity(0.16) }
 }
 
 private struct SidebarRow: View {
-    let section: SidebarSection
+    let title: String
     let isSelected: Bool
     let badge: Int?
     let action: () -> Void
@@ -161,7 +190,7 @@ private struct SidebarRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                Text(section.title)
+                Text(title)
                     .font(.system(size: 13, weight: isSelected ? .semibold : .regular, design: .rounded))
 
                 Spacer(minLength: 4)
@@ -169,13 +198,17 @@ private struct SidebarRow: View {
                 if let badge, badge > 0 {
                     Text("\(badge)")
                         .font(.system(size: 10, weight: .semibold, design: .rounded))
-                        .foregroundStyle(isSelected ? .primary.opacity(0.72) : QCopyTheme.Colors.secondary)
+                        .foregroundStyle(
+                            isSelected
+                                ? QCopyTheme.Colors.primaryText.opacity(0.78)
+                                : QCopyTheme.Colors.secondary
+                        )
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
                         .background(QCopyTheme.Colors.selection, in: Capsule())
                 }
             }
-            .foregroundStyle(.primary)
+            .foregroundStyle(QCopyTheme.Colors.primaryText)
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
             .frame(maxWidth: .infinity, alignment: .leading)
