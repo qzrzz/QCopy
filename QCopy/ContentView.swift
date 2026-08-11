@@ -4,7 +4,6 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var model: CopyViewModel
     @EnvironmentObject private var language: LanguageSettings
-    @ObservedObject private var updater = Updater.shared
     @State private var selectedSection: SidebarSection = .transfer
     @State private var isSourceDropTargeted = false
     @State private var isDestinationDropTargeted = false
@@ -80,42 +79,24 @@ struct ContentView: View {
     }
 
     private var appFooter: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 12) {
-                Image(nsImage: NSApplication.shared.applicationIconImage)
-                    .resizable()
-                    .interpolation(.high)
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 50, height: 50)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
+        HStack(spacing: 12) {
+            Image(nsImage: NSApplication.shared.applicationIconImage)
+                .resizable()
+                .interpolation(.high)
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 50, height: 50)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("QCopy")
-                        .font(QCopyTheme.Typography.brand)
-                    Text("v\(appVersion)")
-                        .font(QCopyTheme.Typography.caption)
-                        .foregroundStyle(QCopyTheme.Colors.secondary)
-                }
-
-                Spacer(minLength: 0)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("QCopy")
+                    .font(QCopyTheme.Typography.brand)
+                Text("v\(appVersion)")
+                    .font(QCopyTheme.Typography.caption)
+                    .foregroundStyle(QCopyTheme.Colors.secondary)
             }
 
-            Button {
-                updater.checkForUpdates()
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 11, weight: .semibold))
-                    Text(language.t(.checkForUpdates))
-                        .font(QCopyTheme.Typography.caption)
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(QCopyButtonStyle(tint: QCopyTheme.Colors.secondary))
-            .controlSize(.small)
-            .disabled(!updater.canCheckForUpdates)
-            .help(language.t(.checkForUpdates))
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, 2)
     }
