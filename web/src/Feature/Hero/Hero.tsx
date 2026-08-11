@@ -1,20 +1,21 @@
-import { uiDictMap, type SupportedLang } from "../../i18n/dict";
+import { getRootRelativePath, uiDictMap, type SupportedLang } from "../../i18n/dict";
 import "./Hero.css";
 
 interface HeroProps {
   lang?: SupportedLang;
 }
 
-/** 首屏骨架：品牌、一句话介绍与下载入口占位。 */
+/** 首屏：品牌、标语与下载入口。 */
 export function Hero({ lang = "en" }: HeroProps) {
   const dict = uiDictMap[lang] || uiDictMap.en;
+  const iconSrc = getRootRelativePath("qcopy-icon.png", lang);
 
   return (
     <section className="hero" aria-labelledby="hero-title">
       <div className="heroInner">
         <img
           className="heroIcon"
-          src="./qcopy-icon.png"
+          src={iconSrc}
           width="96"
           height="96"
           alt=""
