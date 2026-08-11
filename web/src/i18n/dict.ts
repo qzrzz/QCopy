@@ -41,7 +41,7 @@ export const uiDictMap: Record<SupportedLang, UiDict> = {
     siteTitle: "QCopy — 原生 macOS 文件复制",
     metaDesc: "原生 macOS 文件复制工具。海量小文件、外置盘与 NAS 也能快速开传。",
     brand: "QCopy",
-    tagline: "原生 macOS 文件复制，更快更稳",
+    tagline: "macOS 文件复制工具，原生，免费，开源",
     download: "下载",
     viewOnGithub: "GitHub",
     footerTagline: "原生 macOS 文件复制工具。",
@@ -168,12 +168,18 @@ export function getLangUrl(
 
 /**
  * 相对站点根的静态资源路径（子目录下加 `../`）。
+ * 只取文件名，避免生产 WebP 插件把 JS 字符串改写成 `../xxx.webp` 后再二次拼路径。
  */
 export function getRootRelativePath(
   filename: string,
   currentLang?: SupportedLang,
 ): string {
   const cur = currentLang || getCurrentLang();
-  const clean = filename.startsWith("/") ? filename.slice(1) : filename;
+  const clean =
+    filename
+      .replaceAll("\\", "/")
+      .split("/")
+      .filter(Boolean)
+      .pop() || filename;
   return cur === "en" ? `./${clean}` : `../${clean}`;
 }

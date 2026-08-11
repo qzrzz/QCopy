@@ -9,8 +9,8 @@ options:
 
 settings:
   base:
-    MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "4"
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: targeted
     CODE_SIGN_STYLE: Manual
@@ -22,10 +22,17 @@ settings:
       STRIP_INSTALLED_PRODUCT: YES
       DEAD_CODE_STRIPPING: YES
 
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.6.0"
+
 targets:
   QCopy:
     type: application
     platform: macOS
+    dependencies:
+      - package: Sparkle
     sources:
       - path: QCopy
         excludes:
@@ -42,6 +49,9 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         COMBINE_HIDPI_IMAGES: YES
         MACOSX_DEPLOYMENT_TARGET: "26.0"
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/../Frameworks"
       configs:
         Debug:
           PRODUCT_NAME: QCopy Dev

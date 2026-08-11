@@ -90,6 +90,7 @@ enum L10n {
         case appearanceMenu, appearanceSection, languageSection
         case appearanceDark, appearanceLight, appearanceSystem
         case chooseSourceMenu, chooseDestinationMenu, startCopyMenu, cancelCurrentTask, clearHistory
+        case checkForUpdates
 
         case sectionTransfer, sectionHistory, sectionTransferSubtitle, sectionHistorySubtitle
 
@@ -136,6 +137,7 @@ enum L10n {
         .startCopyMenu: "开始复制",
         .cancelCurrentTask: "取消当前任务",
         .clearHistory: "清空记录",
+        .checkForUpdates: "检查更新…",
 
         .sectionTransfer: "复制 / 移动",
         .sectionHistory: "操作记录",
@@ -247,6 +249,7 @@ enum L10n {
         .startCopyMenu: "Start Copy",
         .cancelCurrentTask: "Cancel Current Task",
         .clearHistory: "Clear History",
+        .checkForUpdates: "Check for Updates…",
 
         .sectionTransfer: "Copy / Move",
         .sectionHistory: "History",

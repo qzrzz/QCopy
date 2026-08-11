@@ -1,4 +1,5 @@
-import { getRootRelativePath, uiDictMap, type SupportedLang } from "../../i18n/dict";
+import qcopyIcon from "../../assets/qcopy-icon.png";
+import { uiDictMap, type SupportedLang } from "../../i18n/dict";
 import "./Hero.css";
 
 interface HeroProps {
@@ -8,14 +9,13 @@ interface HeroProps {
 /** 首屏：品牌、标语与下载入口。 */
 export function Hero({ lang = "en" }: HeroProps) {
   const dict = uiDictMap[lang] || uiDictMap.en;
-  const iconSrc = getRootRelativePath("qcopy-icon.png", lang);
 
   return (
     <section className="hero" aria-labelledby="hero-title">
       <div className="heroInner">
         <img
           className="heroIcon"
-          src={iconSrc}
+          src={qcopyIcon}
           width="96"
           height="96"
           alt=""
