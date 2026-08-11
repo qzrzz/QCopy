@@ -37,7 +37,7 @@ const SITE_ORIGIN = "https://qzrzz.github.io/QCopy";
  */
 export function minifyCssSafely(css: string): string {
   let out = css.replace(/\/\*[\s\S]*?\*\//g, "");
-  // 字符串与 url() 外的空白折叠
+  // 空白折叠（不拆 filter 函数参数之间的空格语义：先折叠再只裁剪分隔符两侧）
   out = out.replace(/\s+/g, " ");
   out = out.replace(/\s*([{}:;,>~+])\s*/g, "$1");
   out = out.replace(/;}/g, "}");
@@ -46,13 +46,30 @@ export function minifyCssSafely(css: string): string {
     /\)(?=(?:blur|brightness|contrast|grayscale|hue-rotate|invert|opacity|saturate|sepia|drop-shadow)\()/g,
     ") ",
   );
-  // 若仅有 -webkit-backdrop-filter 且缺少标准属性，补一份（兼容 Firefox 等）
-  out = out.replace(
-    /-webkit-backdrop-filter:([^;{}]+)(?![^}]*?\bbackdrop-filter:)/g,
-    (match, value: string) =>
-      `-webkit-backdrop-filter:${value};backdrop-filter:${value}`,
-  );
+  // 同一规则内仅有 -webkit-backdrop-filter 时补标准属性（兼容 Firefox）
+  out = ensureStandardBackdropFilter(out);
   return out.trim();
+}
+
+/** 在缺少标准 `backdrop-filter` 的规则块中，从 `-webkit-` 声明补一份。 */
+export function ensureStandardBackdropFilter(css: string): string {
+  return css.replace(
+    /-webkit-backdrop-filter:([^;{}]+)/g,
+    (full, value: string, offset: number, whole: string) => {
+      const before = whole.slice(0, offset);
+      const after = whole.slice(offset);
+      const blockStart = before.lastIndexOf("{");
+      const blockEndRel = after.indexOf("}");
+      if (blockStart < 0 || blockEndRel < 0) {
+        return full;
+      }
+      const block = whole.slice(blockStart, offset + blockEndRel + 1);
+      if (/(?<!-webkit-)backdrop-filter:/.test(block)) {
+        return full;
+      }
+      return `${full};backdrop-filter:${value}`;
+    },
+  );
 }
 
 /** 压缩 dist 内全部 CSS，并校验毛玻璃关键声明仍合法。 */
