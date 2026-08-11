@@ -36,19 +36,13 @@ bun run build
 只改 `src/content.ts` 的 `sectionsContentMap`：
 
 1. 增删 **section**（分区标题 / 描述 / id）
-2. 在 section.cards 里增删 **card**（title / desc / style）
-3. 有截图后：
+2. 在 section.cards 里增删 **card**（仅 `image` + `style`）
 
 ```ts
 import transfer from "./shots/transfer.png";
 
-{
-  id: "liquid-glass",
-  title: "...",
-  desc: "...",
-  image: transfer, // 或 video: demoMp4
-  style: "left",   // left | right | bottom
-}
+{ image: transfer, style: "left" } // style: left | right | bottom
+// 无图时：{ style: "left" } 显示占位
 ```
 
 Header 分区锚点会根据 sections 自动生成（`#section-{id}`）。

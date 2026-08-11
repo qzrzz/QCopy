@@ -7,11 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00F6F0382B4B5AFA450DB998 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CE12D7FBF4B801939A082BE /* Localization.swift */; };
 		0A4C75E19AEEFB1A619E58EE /* TransferWorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACB6AEC4B627492720531F51 /* TransferWorkspaceView.swift */; };
 		1D37355EEAC470CFC7A59AB2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A8C67AAE44AC2CB7ADDB3439 /* Assets.xcassets */; };
 		32B5338CF330D4D49B27C19F /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1E6BBC625C1B0265B99B45 /* Theme.swift */; };
 		467BECA0BD3B6CE365A56065 /* CopyEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C026766B87A619C7085D5C6 /* CopyEngine.swift */; };
 		5FA11739E916D3DDC9BB4264 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E768823F71687002F54B89 /* ContentView.swift */; };
+		62ABF6F5856438DFEA31FF27 /* NetworkVolumeIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B26831005942A373B054B64E /* NetworkVolumeIntegrationTests.swift */; };
 		8559727B8EE9E2B4E38D7099 /* QCopyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2941EBAAC0D43BF7434BF959 /* QCopyApp.swift */; };
 		97F83520F535D5F27C71A2B8 /* CopyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7D3F98331F5D392DEDDB53D /* CopyModels.swift */; };
 		C5B0C3E44BC4037D1D691BD3 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = 6808612EA83986AF5071A6D9 /* Fonts */; };
@@ -38,8 +40,10 @@
 		6564E623E056AAD30AAE67AE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		6808612EA83986AF5071A6D9 /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Fonts; path = QCopy/Fonts; sourceTree = SOURCE_ROOT; };
 		88F945821D02EBF33DAE27BC /* CopyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyViewModel.swift; sourceTree = "<group>"; };
+		9CE12D7FBF4B801939A082BE /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		A8C67AAE44AC2CB7ADDB3439 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		ACB6AEC4B627492720531F51 /* TransferWorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferWorkspaceView.swift; sourceTree = "<group>"; };
+		B26831005942A373B054B64E /* NetworkVolumeIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkVolumeIntegrationTests.swift; sourceTree = "<group>"; };
 		BB1E6BBC625C1B0265B99B45 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		C4E768823F71687002F54B89 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		DA785B0E0A674F61BD5CDA1A /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
@@ -52,6 +56,7 @@
 			isa = PBXGroup;
 			children = (
 				40D94D0296922546FF4BCDF0 /* CopyEngineSafetyTests.swift */,
+				B26831005942A373B054B64E /* NetworkVolumeIntegrationTests.swift */,
 			);
 			path = QCopyTests;
 			sourceTree = "<group>";
@@ -85,6 +90,7 @@
 				6808612EA83986AF5071A6D9 /* Fonts */,
 				DA785B0E0A674F61BD5CDA1A /* HistoryView.swift */,
 				6564E623E056AAD30AAE67AE /* Info.plist */,
+				9CE12D7FBF4B801939A082BE /* Localization.swift */,
 				2941EBAAC0D43BF7434BF959 /* QCopyApp.swift */,
 				BB1E6BBC625C1B0265B99B45 /* Theme.swift */,
 				ACB6AEC4B627492720531F51 /* TransferWorkspaceView.swift */,
@@ -190,6 +196,7 @@
 				97F83520F535D5F27C71A2B8 /* CopyModels.swift in Sources */,
 				D4C1AC014A6A6590F82119A0 /* CopyViewModel.swift in Sources */,
 				F0D48579E0C050A0E178BCA5 /* HistoryView.swift in Sources */,
+				00F6F0382B4B5AFA450DB998 /* Localization.swift in Sources */,
 				8559727B8EE9E2B4E38D7099 /* QCopyApp.swift in Sources */,
 				32B5338CF330D4D49B27C19F /* Theme.swift in Sources */,
 				0A4C75E19AEEFB1A619E58EE /* TransferWorkspaceView.swift in Sources */,
@@ -201,6 +208,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F7CCFEBE3DC8BF059574DE6D /* CopyEngineSafetyTests.swift in Sources */,
+				62ABF6F5856438DFEA31FF27 /* NetworkVolumeIntegrationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

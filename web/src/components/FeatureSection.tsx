@@ -26,8 +26,11 @@ export function FeatureSection({ section }: FeatureSectionProps) {
       </header>
 
       <div className="featureCollection__cards">
-        {section.cards.map((card) => (
-          <FeatureCard key={card.id} card={card} />
+        {section.cards.map((card, index) => (
+          <FeatureCard
+            key={`${section.id}-${card.style ?? "left"}-${card.image ?? index}`}
+            card={card}
+          />
         ))}
       </div>
     </section>

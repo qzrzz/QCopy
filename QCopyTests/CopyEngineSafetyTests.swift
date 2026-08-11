@@ -95,6 +95,31 @@ final class CopyEngineSafetyTests: XCTestCase {
         }
     }
 
+    func testReplaceOverwritesExistingRegularFile() async throws {
+        try await withFixture { root in
+            let sourceDirectory = root.appendingPathComponent("source", isDirectory: true)
+            let destinationDirectory = root.appendingPathComponent("destination", isDirectory: true)
+            try createDirectory(sourceDirectory)
+            try createDirectory(destinationDirectory)
+            let source = sourceDirectory.appendingPathComponent("same.txt")
+            let destination = destinationDirectory.appendingPathComponent("same.txt")
+            try write("NEW", to: source)
+            try write("OLD", to: destination)
+
+            let result = try await run(
+                source: source,
+                destination: destinationDirectory,
+                mode: .copy,
+                policy: .replace
+            )
+
+            XCTAssertEqual(try read(source), "NEW")
+            XCTAssertEqual(try read(destination), "NEW")
+            XCTAssertEqual(result.filesCopied, 1)
+            XCTAssertEqual(result.filesSkipped, 0)
+        }
+    }
+
     func testDestinationSymlinkIntoSourceIsRejected() async throws {
         try await withFixture { root in
             let source = root.appendingPathComponent("source", isDirectory: true)
@@ -334,6 +359,22 @@ final class CopyEngineSafetyTests: XCTestCase {
         }
     }
 
+    func testFileSizeMismatchIsReported() async throws {
+        try await withFixture { root in
+            let target = root.appendingPathComponent("wrong-size.bin")
+            try write("1234", to: target)
+
+            XCTAssertThrowsError(try CopyEngine.verifyFileSize(at: target, expectedSize: 3)) { error in
+                guard case let CopyError.sizeMismatch(path, expected, actual) = error else {
+                    return XCTFail("预期尺寸校验错误，实际为 \(error)")
+                }
+                XCTAssertEqual(path, target.path)
+                XCTAssertEqual(expected, 3)
+                XCTAssertEqual(actual, 4)
+            }
+        }
+    }
+
     func testSameVolumeMoveUsesAtomicRenameFastPath() async throws {
         try await withFixture { root in
             let sourceDirectory = root.appendingPathComponent("source", isDirectory: true)
@@ -387,17 +428,191 @@ final class CopyEngineSafetyTests: XCTestCase {
         }
     }
 
+    func testSmartParallelCopiesManySmallFiles() async throws {
+        try await withFixture { root in
+            let source = root.appendingPathComponent("many-small-files", isDirectory: true)
+            let destination = root.appendingPathComponent("destination", isDirectory: true)
+            try createDirectory(source)
+            try createDirectory(destination)
+
+            for index in 0..<48 {
+                try write("payload-\(index)", to: source.appendingPathComponent("file-\(index).txt"))
+            }
+
+            let result = try await run(
+                source: source,
+                destination: destination,
+                mode: .copy,
+                policy: .replace,
+                smartParallel: true
+            )
+
+            XCTAssertEqual(result.filesCopied, 48)
+            XCTAssertEqual(result.filesSkipped, 0)
+            for index in 0..<48 {
+                XCTAssertEqual(
+                    try read(destination.appendingPathComponent("many-small-files/file-\(index).txt")),
+                    "payload-\(index)"
+                )
+            }
+        }
+    }
+
+    func testProgressReportsCurrentConcurrency() async throws {
+        try await withFixture { root in
+            let source = root.appendingPathComponent("concurrency-source", isDirectory: true)
+            let destination = root.appendingPathComponent("concurrency-destination", isDirectory: true)
+            try createDirectory(source)
+            try createDirectory(destination)
+            for index in 0..<16 {
+                try write("payload-\(index)", to: source.appendingPathComponent("file-\(index).txt"))
+            }
+
+            let recorder = ProgressRecorder()
+            _ = try await CopyEngine.run(
+                source: source,
+                destination: destination,
+                mode: .copy,
+                conflictPolicy: .replace,
+                smartParallel: true,
+                progress: { recorder.recordConcurrency($0.currentConcurrency) }
+            )
+
+            let values = recorder.concurrencies()
+            XCTAssertFalse(values.isEmpty)
+            XCTAssertTrue(values.allSatisfy { $0 >= 1 })
+            XCTAssertEqual(values.max(), 16)
+        }
+    }
+
+    func testAdaptiveParallelTunerIncreasesAndDecreasesConcurrency() {
+        var tuner = AdaptiveParallelTuner()
+        XCTAssertEqual(tuner.maximumConcurrency, 32)
+        let initial = tuner.concurrency
+
+        tuner.observe(bytes: 1_000_000, duration: 1)
+        tuner.observe(bytes: 2_000_000, duration: 1)
+        let increased = tuner.concurrency
+        XCTAssertGreaterThan(increased, initial)
+
+        tuner.observe(bytes: 100_000, duration: 1)
+        XCTAssertLessThan(tuner.concurrency, increased)
+    }
+
+    func testAdaptiveParallelTunerCanGrowToGlobalMaximum() {
+        var tuner = AdaptiveParallelTuner()
+        for _ in 0..<130 {
+            tuner.observe(bytes: 2_000_000, duration: 1)
+        }
+        XCTAssertEqual(tuner.concurrency, AdaptiveParallelTuner.maximumConcurrencyLimit)
+    }
+
+    func testAdaptiveParallelTunerSelectsInitialConcurrencyByFileSize() {
+        let megabyte: Int64 = 1024 * 1024
+        let cases: [(Int64, Int)] = [
+            (0, 16),
+            (megabyte - 1, 16),
+            (megabyte, 12),
+            (8 * megabyte - 1, 12),
+            (8 * megabyte, 8),
+            (16 * megabyte, 4),
+            (32 * megabyte, 2),
+            (64 * megabyte - 1, 2),
+            (64 * megabyte, 2),
+            (500 * megabyte - 1, 1),
+            (500 * megabyte, 1)
+        ]
+
+        for (size, expected) in cases {
+            var tuner = AdaptiveParallelTuner()
+            tuner.prepare(forFileSize: size)
+            XCTAssertEqual(tuner.concurrency, expected, "文件大小 \(size) 应从 \(expected) 路开始")
+        }
+    }
+
+    func testAdaptiveParallelTunerUsesAtMostThirtyTwoPrefetchedFiles() {
+        XCTAssertEqual(AdaptiveParallelTuner.prefetchBatchSize, 32)
+        XCTAssertTrue(AdaptiveParallelTuner.isParallelEligible(fileSize: 499 * 1024 * 1024))
+        XCTAssertFalse(AdaptiveParallelTuner.isParallelEligible(fileSize: 500 * 1024 * 1024))
+
+        var tuner = AdaptiveParallelTuner()
+        XCTAssertEqual(tuner.prefetchLimit, 32)
+        tuner.markBatchStarted()
+        XCTAssertEqual(tuner.prefetchLimit, 32)
+    }
+
+    func testAdaptiveParallelTunerChoosesBatchStartFromObservedSizes() {
+        let megabyte: Int64 = 1024 * 1024
+        XCTAssertEqual(
+            AdaptiveParallelTuner.initialConcurrency(forFileSizes: [
+                2 * megabyte,
+                12 * megabyte,
+                40 * megabyte
+            ]),
+            12
+        )
+        XCTAssertEqual(
+            AdaptiveParallelTuner.initialConcurrency(forFileSizes: [
+                80 * megabyte,
+                120 * megabyte
+            ]),
+            1
+        )
+        XCTAssertEqual(
+            AdaptiveParallelTuner.maximumSafeConcurrency(forFileSize: 2 * megabyte),
+            32
+        )
+        XCTAssertEqual(
+            AdaptiveParallelTuner.maximumSafeConcurrency(forFileSize: 40 * megabyte),
+            2
+        )
+        XCTAssertEqual(
+            AdaptiveParallelTuner.maximumSafeConcurrency(forFileSize: 80 * megabyte),
+            1
+        )
+    }
+
+    func testFilesOver500MBAreAlwaysTransferredSerially() async throws {
+        try await withFixture { root in
+            let source = root.appendingPathComponent("large-source", isDirectory: true)
+            let destination = root.appendingPathComponent("large-destination", isDirectory: true)
+            try createDirectory(source)
+            try createDirectory(destination)
+
+            let largeFile = source.appendingPathComponent("large.bin")
+            try createSparseFile(
+                at: largeFile,
+                logicalSize: 500 * 1024 * 1024 + 1
+            )
+
+            let recorder = ProgressRecorder()
+            _ = try await CopyEngine.run(
+                source: source,
+                destination: destination,
+                mode: .copy,
+                conflictPolicy: .replace,
+                smartParallel: true,
+                progress: { recorder.recordConcurrency($0.currentConcurrency) }
+            )
+
+            XCTAssertFalse(recorder.concurrencies().isEmpty)
+            XCTAssertEqual(recorder.concurrencies().max(), 1)
+        }
+    }
+
     private func run(
         source: URL,
         destination: URL,
         mode: TransferMode,
-        policy: ConflictPolicy
+        policy: ConflictPolicy,
+        smartParallel: Bool = true
     ) async throws -> CopyResult {
         try await CopyEngine.run(
             source: source,
             destination: destination,
             mode: mode,
             conflictPolicy: policy,
+            smartParallel: smartParallel,
             progress: { _ in }
         )
     }
@@ -517,6 +732,7 @@ final class CopyEngineSafetyTests: XCTestCase {
 private final class ProgressRecorder: @unchecked Sendable {
     private let lock = NSLock()
     private var recordedPhases: [String] = []
+    private var recordedConcurrency: [Int] = []
 
     func record(_ phase: String) {
         lock.lock()
@@ -528,5 +744,17 @@ private final class ProgressRecorder: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return recordedPhases
+    }
+
+    func recordConcurrency(_ concurrency: Int) {
+        lock.lock()
+        recordedConcurrency.append(concurrency)
+        lock.unlock()
+    }
+
+    func concurrencies() -> [Int] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedConcurrency
     }
 }

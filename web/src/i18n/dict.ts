@@ -19,7 +19,7 @@ export const uiDictMap: Record<SupportedLang, UiDict> = {
     siteTitle: "QCopy",
     metaDesc: "A native macOS file copy tool.",
     brand: "QCopy",
-    tagline: "Native macOS file copy, done right.",
+    tagline: "macOS file copy tool, native, fast, free",
     download: "Download",
     viewOnGithub: "GitHub",
     footerTagline: "A native macOS file copy tool.",
