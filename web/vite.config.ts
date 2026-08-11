@@ -9,7 +9,9 @@ export default defineConfig({
   base: "./",
   build: {
     assetsInlineLimit: 0,
-    cssMinify: "lightningcss",
+    // lightningcss 会错误压缩 backdrop-filter（去空格 + 丢掉标准属性）。
+    // 本站 CSS 体量很小；关闭压缩后由 scripts/build.ts 做安全压缩与修复。
+    cssMinify: false,
   },
   server: isCodexSeatbeltSandbox
     ? { watch: { useFsEvents: false, usePolling: true } }
