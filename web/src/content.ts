@@ -1,10 +1,9 @@
 import type { SupportedLang } from "./i18n/dict";
 
- 
 import ImageS1 from "./shots/s1.png";
-import ImageS2 from "./shots/s2.png";
 import ImageS3 from "./shots/s3.png";
 import ImageReady from "./shots/macosReady.png";
+
 /**
  * 卡片布局：
  * - left   媒体偏左（默认）
@@ -41,9 +40,7 @@ export interface SectionConfig {
 
 /**
  * 多语言全站内容。
- * 卡片只配 image + style；有图后：
- *   import shot from "./shots/transfer.png";
- *   { image: shot, style: "left" }
+ * 卡片只配 image + style；文案按语言维护。
  */
 export const sectionsContentMap: Record<SupportedLang, SectionConfig[]> = {
   en: [
@@ -59,14 +56,13 @@ export const sectionsContentMap: Record<SupportedLang, SectionConfig[]> = {
       title: "Copy & Move",
       description:
         "Simple Copy & Move. Skip the pre-copy preparation and detailed progress tracking for faster transfers of large numbers of small files.",
-      cards: [{ style: "center", image:ImageS1 } ],
+      cards: [{ style: "center", image: ImageS1 }],
     },
-     {
+    {
       id: "history",
       title: "Copy History",
-      description:
-        "Keep a detailed record of every transfer.",
-      cards: [{ style: "center", image:ImageS3 } ],
+      description: "Keep a detailed record of every transfer.",
+      cards: [{ style: "center", image: ImageS3 }],
     },
   ],
 
@@ -74,22 +70,22 @@ export const sectionsContentMap: Record<SupportedLang, SectionConfig[]> = {
     {
       id: "why",
       title: "为什么选择 QCopy",
-
       description:
-        "Finder 在大量文件场景下，往往把时间花在「准备」而不是真正传输——尤其是海量小文件、外置盘与 NAS。",
-      cards: [{ style: "left" }, { style: "right" }],
+        "要把成千上万小文件拷到 NAS 或外置盘？不必再卡在「正在准备移动…」。\n如果你用过 Windows 上的 FastCopy / Robocopy，可以把 QCopy 当作 macOS 上的同类工具。",
+      cards: [{ style: "center", image: ImageReady }],
     },
     {
       id: "features",
-      title: "核心能力",
-      description: "原生、安静的复制 / 移动工作区——进度、冲突与历史都在一处。",
-      cards: [{ style: "left" }, { style: "left" }, { style: "right" }, { style: "bottom" }],
+      title: "复制与移动",
+      description:
+        "简单的复制 / 移动。跳过冗长的预拷贝准备，并提供清晰进度，海量小文件传输更快。",
+      cards: [{ style: "center", image: ImageS1 }],
     },
     {
-      id: "safety",
-      title: "安全优先",
-      description: "针对移动与替换中容易踩坑的路径与写入策略做防呆。",
-      cards: [{ style: "left" }, { style: "right" }],
+      id: "history",
+      title: "复制记录",
+      description: "完整保留每一次传输的详细记录。",
+      cards: [{ style: "center", image: ImageS3 }],
     },
   ],
 };

@@ -1,7 +1,7 @@
 # QCopy Web
 
-QCopy 的产品官网（最小化骨架），使用 Vite、React 与 TypeScript 构建。  
-架构参考 [Qjiao/web](../../Qjiao/web)：`Feature/` 组件分区、`i18n` 文案字典、`scripts/build.ts` 发布到 `../docs`。
+QCopy 的产品官网，使用 Vite、React 与 TypeScript 构建。  
+架构参考 Qjiao/web：`Feature/` 分区、`i18n` 多语言、`scripts/build.ts` 发布到 `../docs`。
 
 ## 开发
 
@@ -17,32 +17,35 @@ bun run dev
 bun run build
 ```
 
-会执行 Vite 打包，并将产物同步到仓库根目录的 `docs/`（供 GitHub Pages 使用）。
+会执行 Vite 打包，生成 **en / zh-Hans** SEO 页，并同步到仓库根目录 `docs/`：
+
+- `docs/index.html` — 英文（默认）
+- `docs/zh-Hans/index.html` — 简体中文
+
+## 多语言
+
+| 能力 | 说明 |
+|------|------|
+| 路径 | `/` 英文，`/zh-Hans/` 中文 |
+| 自动跳转 | 根路径按 localStorage / 浏览器语言跳到 zh-Hans |
+| 切换器 | 顶栏语言下拉，写入 `qcopy_lang` |
+| 文案 | `src/i18n/dict.ts`（壳层）+ `src/content.ts`（分区） |
 
 ## 目录
 
-- `src/content.ts`：**内容框架入口**（分区 + 卡片，en / zh-Hans）
-- `src/components/`：`FeatureSection` / `FeatureCard` 通用渲染
-- `src/Feature/`：Header / Hero / Footer 页面壳
-- `src/i18n/dict.ts`：壳层 UI 文案（标题、下载按钮等）
-- `src/shots/`：营销截图 / 演示媒体（在 content 里 import）
-- `src/assets/fonts/`：GeneralSans + Pally（与 Qjiao 官网同源）
-- `src/styles.css`：分区与卡片布局样式
-- `public/`：图标与 `latest.json`
-- `scripts/build.ts`：构建并同步到 `../docs`
+- `src/content.ts`：分区内容（en / zh-Hans）
+- `src/i18n/dict.ts`：UI 文案与语言工具
+- `src/components/`：FeatureSection / FeatureCard / LanguageSwitcher
+- `src/Feature/`：Header / Hero / Footer
+- `src/shots/`：营销截图（源文件可 PNG；生产构建转 WebP）
+- `build/webp-assets-vite-plugin.ts`：生产构建将 jpeg/png/svg 转无损 WebP 并改写引用
+- `scripts/build.ts`：构建 + 多语言 SEO + 同步 docs
 
 ## 如何改内容
 
-只改 `src/content.ts` 的 `sectionsContentMap`：
-
-1. 增删 **section**（分区标题 / 描述 / id）
-2. 在 section.cards 里增删 **card**（仅 `image` + `style`）
+1. **壳层文案**：`src/i18n/dict.ts` 的 `uiDictMap`
+2. **分区**：`src/content.ts` 的 `sectionsContentMap`
 
 ```ts
-import transfer from "./shots/transfer.png";
-
-{ image: transfer, style: "left" } // style: left | right | bottom
-// 无图时：{ style: "left" } 显示占位
+{ image: transfer, style: "center" } // left | right | bottom | center
 ```
-
-Header 分区锚点会根据 sections 自动生成（`#section-{id}`）。

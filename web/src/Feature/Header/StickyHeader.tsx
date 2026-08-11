@@ -1,38 +1,50 @@
-import { getSectionNav } from "../../content";
-import { uiDictMap, type SupportedLang } from "../../i18n/dict";
+import { LanguageSwitcher } from "../../components/LanguageSwitcher";
+import { getSectionsContent } from "../../content";
+import { getRootRelativePath, uiDictMap, type SupportedLang } from "../../i18n/dict";
 import "./StickyHeader.css";
 
 interface StickyHeaderProps {
   lang?: SupportedLang;
 }
 
-/** 顶部导航：品牌 + 分区锚点 + GitHub。 */
+/** 顶部导航：品牌 + Why QCopy + Download / GitHub + 语言切换。 */
 export function StickyHeader({ lang = "en" }: StickyHeaderProps) {
   const dict = uiDictMap[lang] || uiDictMap.en;
-  const nav = getSectionNav(lang);
+  const iconSrc = getRootRelativePath("qcopy-icon.png", lang);
+  const whySection = getSectionsContent(lang).find((s) => s.id === "why");
+  const whyTitle = whySection?.title ?? (lang === "zh-Hans" ? "为什么选择 QCopy" : "Why QCopy");
 
   return (
     <header className="stickyHeader">
       <a className="stickyHeaderBrand" href="#top">
-        <img src="./qcopy-icon.png" width="28" height="28" alt="" />
+        <img src={iconSrc} width="28" height="28" alt="" />
         <span>{dict.brand}</span>
       </a>
 
-      <nav className="stickyHeaderNav" aria-label="Primary">
-        {nav.map((item) => (
-          <a key={item.id} className="stickyHeaderLink" href={item.href}>
-            {item.title}
+      <div className="stickyHeaderActions">
+        <nav className="stickyHeaderNav" aria-label="Primary">
+          <a className="stickyHeaderLink" href="#section-why">
+            {whyTitle}
           </a>
-        ))}
-        <a
-          className="stickyHeaderLink stickyHeaderLink--external"
-          href="https://github.com/qzrzz/QCopy"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {dict.viewOnGithub}
-        </a>
-      </nav>
+          <a
+            className="stickyHeaderLink stickyHeaderLink--external"
+            href="https://github.com/qzrzz/QCopy"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {dict.viewOnGithub}
+          </a>
+          <a
+            className="stickyHeaderLink stickyHeaderLink--action"
+            href="https://github.com/qzrzz/QCopy/releases/latest"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {dict.download}
+          </a>
+        </nav>
+        <LanguageSwitcher currentLang={lang} />
+      </div>
     </header>
   );
 }
