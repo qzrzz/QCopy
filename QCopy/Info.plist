@@ -28,5 +28,10 @@
 	<string>NSApplication</string>
 	<key>ATSApplicationFontsPath</key>
 	<string>Fonts</string>
+	<!-- Sparkle：feed 与 EdDSA 公钥（发布前用 generate_keys 生成并替换公钥） -->
+	<key>SUFeedURL</key>
+	<string>https://github.com/qzrzz/QCopy/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>rIu1scWZ0i+1pucGPQPhBmKpHUNjrJuiU2jDHHRAA20=</string>
 </dict>
 </plist>

@@ -6,6 +6,8 @@ struct QCopyApp: App {
     @StateObject private var model = CopyViewModel()
     @StateObject private var appearance = AppearanceSettings()
     @StateObject private var language = LanguageSettings()
+    // 持有单例，Release 启动时即武装 Sparkle 后台检查。
+    @StateObject private var updater = Updater.shared
 
     var body: some Scene {
         WindowGroup {
@@ -30,6 +32,13 @@ struct QCopyApp: App {
         .windowToolbarStyle(.unified(showsTitle: false))
         .windowResizability(.contentMinSize)
         .commands {
+            CommandGroup(after: .appInfo) {
+                CheckForUpdatesView(
+                    updater: updater,
+                    title: language.t(.checkForUpdates)
+                )
+            }
+
             CommandGroup(after: .newItem) {
                 Button(language.t(.chooseSourceMenu)) {
                     model.chooseSource(language: language.language)

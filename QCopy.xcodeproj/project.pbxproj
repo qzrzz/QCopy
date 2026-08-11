@@ -12,10 +12,12 @@
 		1D37355EEAC470CFC7A59AB2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A8C67AAE44AC2CB7ADDB3439 /* Assets.xcassets */; };
 		32B5338CF330D4D49B27C19F /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1E6BBC625C1B0265B99B45 /* Theme.swift */; };
 		467BECA0BD3B6CE365A56065 /* CopyEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C026766B87A619C7085D5C6 /* CopyEngine.swift */; };
+		49611AA764A4BCD5DC249F42 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 4A4BEC4CE63E7C2A22A8CADD /* Sparkle */; };
 		5FA11739E916D3DDC9BB4264 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E768823F71687002F54B89 /* ContentView.swift */; };
 		62ABF6F5856438DFEA31FF27 /* NetworkVolumeIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B26831005942A373B054B64E /* NetworkVolumeIntegrationTests.swift */; };
 		8559727B8EE9E2B4E38D7099 /* QCopyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2941EBAAC0D43BF7434BF959 /* QCopyApp.swift */; };
 		97F83520F535D5F27C71A2B8 /* CopyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7D3F98331F5D392DEDDB53D /* CopyModels.swift */; };
+		B169B17D8D89F3A7DA519A33 /* Updater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6495703E44121C2062E984F6 /* Updater.swift */; };
 		C5B0C3E44BC4037D1D691BD3 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = 6808612EA83986AF5071A6D9 /* Fonts */; };
 		D4C1AC014A6A6590F82119A0 /* CopyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88F945821D02EBF33DAE27BC /* CopyViewModel.swift */; };
 		F0D48579E0C050A0E178BCA5 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA785B0E0A674F61BD5CDA1A /* HistoryView.swift */; };
@@ -37,6 +39,7 @@
 		2941EBAAC0D43BF7434BF959 /* QCopyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QCopyApp.swift; sourceTree = "<group>"; };
 		40D94D0296922546FF4BCDF0 /* CopyEngineSafetyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyEngineSafetyTests.swift; sourceTree = "<group>"; };
 		5C026766B87A619C7085D5C6 /* CopyEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyEngine.swift; sourceTree = "<group>"; };
+		6495703E44121C2062E984F6 /* Updater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Updater.swift; sourceTree = "<group>"; };
 		6564E623E056AAD30AAE67AE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		6808612EA83986AF5071A6D9 /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Fonts; path = QCopy/Fonts; sourceTree = SOURCE_ROOT; };
 		88F945821D02EBF33DAE27BC /* CopyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyViewModel.swift; sourceTree = "<group>"; };
@@ -50,6 +53,17 @@
 		E7D3F98331F5D392DEDDB53D /* CopyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyModels.swift; sourceTree = "<group>"; };
 		EF7DD8D1E6184A08650DAD0A /* QCopyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QCopyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		F73BD986D2FB21D01C1E30EE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				49611AA764A4BCD5DC249F42 /* Sparkle in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		0D7E63FCB27A71D02026BEA2 /* QCopyTests */ = {
@@ -94,6 +108,7 @@
 				2941EBAAC0D43BF7434BF959 /* QCopyApp.swift */,
 				BB1E6BBC625C1B0265B99B45 /* Theme.swift */,
 				ACB6AEC4B627492720531F51 /* TransferWorkspaceView.swift */,
+				6495703E44121C2062E984F6 /* Updater.swift */,
 			);
 			path = QCopy;
 			sourceTree = "<group>";
@@ -125,6 +140,7 @@
 			buildPhases = (
 				23BBA88BC72BD9298AB04702 /* Sources */,
 				9ECBAA91A905D00579A437F0 /* Resources */,
+				F73BD986D2FB21D01C1E30EE /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -132,6 +148,7 @@
 			);
 			name = QCopy;
 			packageProductDependencies = (
+				4A4BEC4CE63E7C2A22A8CADD /* Sparkle */,
 			);
 			productName = QCopy;
 			productReference = 0CB2631728E2F0AC36686423 /* QCopy.app */;
@@ -163,6 +180,9 @@
 			);
 			mainGroup = 1F9A950CC501BA7F63C34A74;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D28827411E33460702E7D9AB /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0DCB98A74C6EF6042B4F79F0 /* Products */;
 			projectDirPath = "";
@@ -200,6 +220,7 @@
 				8559727B8EE9E2B4E38D7099 /* QCopyApp.swift in Sources */,
 				32B5338CF330D4D49B27C19F /* Theme.swift in Sources */,
 				0A4C75E19AEEFB1A619E58EE /* TransferWorkspaceView.swift in Sources */,
+				B169B17D8D89F3A7DA519A33 /* Updater.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -259,7 +280,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_HARDENED_RUNTIME = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -279,7 +300,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -381,7 +402,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEPLOYMENT_POSTPROCESSING = YES;
@@ -397,7 +418,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -458,6 +479,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		D28827411E33460702E7D9AB /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.6.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4A4BEC4CE63E7C2A22A8CADD /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D28827411E33460702E7D9AB /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 8718CAFA3F43488A0DA27E20 /* Project object */;
 }

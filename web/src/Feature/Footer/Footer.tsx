@@ -1,9 +1,5 @@
-import {
-  getRootRelativePath,
-  STUDIO_URL,
-  uiDictMap,
-  type SupportedLang,
-} from "../../i18n/dict";
+import qcopyIcon from "../../assets/qcopy-icon.png";
+import { STUDIO_URL, uiDictMap, type SupportedLang } from "../../i18n/dict";
 import "./Footer.css";
 
 interface FooterProps {
@@ -13,13 +9,12 @@ interface FooterProps {
 /** 页脚。 */
 export function Footer({ lang = "en" }: FooterProps) {
   const dict = uiDictMap[lang] || uiDictMap.en;
-  const iconSrc = getRootRelativePath("qcopy-icon.png", lang);
 
   return (
     <footer className="siteFooter">
       <div className="siteFooterInner">
         <a className="siteFooterBrand" href="#top">
-          <img src={iconSrc} width="28" height="28" alt="" />
+          <img src={qcopyIcon} width="28" height="28" alt="" />
           <span>{dict.brand}</span>
         </a>
         <p className="siteFooterTagline">{dict.footerTagline}</p>

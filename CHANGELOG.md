@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- 自动更新对齐 Qjiao：Sparkle + 完整 ZIP + `generate_appcast`（最多 3 个 delta）+ 本机 `release/` 历史
+- Release 启动后静默检查更新；Debug 不启动 Sparkle；菜单 / 侧栏可「检查更新…」
 - 传输进度：开始前预扫描总大小，进度条按整次任务 0→100% 单调前进，不再在切文件时回缩
 - 传输速度：2.5s 滑动窗口 + EMA，并与全程平均融合，完成时显示全程平均速度
 - 路径记录：选择来源 / 目标时自动保存最近路径（UserDefaults），重启后恢复上次选择
