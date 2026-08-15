@@ -109,6 +109,13 @@ npm run release -- 0.2.0
 8. 调用 `generate_appcast` 签名并写出 `appcast.xml`（及 delta）  
 9. 上传 GitHub Release：DMG、ZIP、notes、appcast、delta  
 10. 将当前 ZIP / appcast / 清单写入本机 `release/`  
+11. 写出 `web/download.json` 与 `docs/download.json`，供官网直链最新 DMG / ZIP 
+
+仓库里还没有 `download.json` 时，可根据本机已发布的 DMG / ZIP 生成：
+
+```bash
+bun scripts/download-manifest.ts
+```
 
 应用检查更新的 feed：
 
@@ -125,6 +132,7 @@ https://github.com/qzrzz/QCopy/releases/latest/download/appcast.xml
 | `QCopy-<version>.md` | 更新说明 |
 | `appcast.xml` | Sparkle 更新源 |
 | `*.delta` | 相对旧版的差分（有基线时） |
+| `web/download.json`、`docs/download.json` | 官网下载清单（直链最新 DMG / ZIP） |
 
 ### `.env` 示例
 

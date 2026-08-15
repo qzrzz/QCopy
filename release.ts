@@ -8,6 +8,7 @@
  * 4. 打包 QCopy-<version>.dmg（新用户安装）
  * 5. 生成 Sparkle ZIP + 版本说明，基于本机 release/ 历史做 delta，调用 generate_appcast
  * 6. 默认发布到 GitHub Release（DMG + ZIP + notes + appcast + deltas）
+ * 7. 写出 web/download.json 与 docs/download.json，供官网直链安装包
  *
  * 依赖 .env：
  *   MACOS_SIGNING_IDENTITY / APPLE_* / QCOPY_NOTARY_PROFILE
@@ -33,6 +34,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { basename, join } from "node:path";
+import { writeDownloadManifest } from "./scripts/download-manifest";
 import { generateAppcast } from "./scripts/generate-appcast";
 import { isSemVer, readPackageMetadata } from "./version";
 
@@ -719,8 +721,15 @@ async function main() {
       releaseNotes,
     });
     await persistReleaseCache(version, buildNumber, `v${version}`, zipPath, appcastPath);
+    await writeDownloadManifest({
+      version,
+      build: buildNumber,
+      repository: GITHUB_OWNER_REPO,
+      dmgPath,
+      zipPath,
+    });
   } else {
-    log("ℹ️ 已跳过 GitHub Release 与 release/ 缓存（--no-publish）");
+    log("ℹ️ 已跳过 GitHub Release、release/ 缓存与官网 download.json（--no-publish）");
   }
 }
 

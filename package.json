@@ -1,6 +1,7 @@
 {
   "name": "QCopy",
   "version": "1.0.3",
+  "type": "module",
   "private": true,
   "description": "macOS 原生快速文件复制工具",
   "scripts": {
@@ -10,10 +11,21 @@
     "release": "bun release.ts",
     "clean": "bun scripts/clean.ts",
     "version": "1.0.3",
-    "version+": "bun scripts/version-bump.ts"
+    "version+": "bun scripts/version-bump.ts",
+    "web:dev": "qpage --dev ./web ./docs",
+    "web:build": "qpage ./web ./docs",
+    "web:preview": "qpage --preview ./web ./docs",
+    "web:i18n:codex": "codex exec 根据./web/translate.md完成翻译任务",
+    "web:i18n:gemini": "agy -p 根据./web/translate.md完成翻译任务",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@types/node": "26.2.0",
+    "chalk": "6.0.0",
+    "qpage": "link:qpage"
   },
   "packageManager": "bun",
-  "dependencies": {
-    "@types/node": "26.2.0"
+  "devDependencies": {
+    "vitest": "4.1.10"
   }
 }
