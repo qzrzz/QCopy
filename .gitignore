@@ -4,3 +4,5 @@ build/
 # 本机 Sparkle 历史（ZIP / appcast / manifest），勿提交
 release/
 .DS_Store
+dist
+dist-*/
